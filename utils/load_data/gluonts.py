@@ -95,7 +95,7 @@ class GluontsDataset(LoadDataset):
     # }
 
     frequency_map = {
-        'nn5_weekly': 4,
+        'nn5_weekly': 52,
         'electricity_weekly': 4,
         'solar_weekly': 4,
         'kaggle_web_traffic_weekly': 4,
@@ -110,7 +110,7 @@ class GluontsDataset(LoadDataset):
     }
 
     context_length = {
-        'nn5_weekly': 12,
+        'nn5_weekly': 52,
         'electricity_weekly': 12,
         'solar_weekly': 12,
         'kaggle_web_traffic_weekly': 12,

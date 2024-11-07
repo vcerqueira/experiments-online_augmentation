@@ -16,7 +16,7 @@ DATA_GROUPS = {
     'M3': ['Monthly', 'Quarterly'],
     'M4': ['Monthly', 'Quarterly'],
     'Tourism': ['Monthly', 'Quarterly'],
-    'Gluonts': ['m1_monthly', 'm1_quarterly'],
+    'Gluonts': ['m1_monthly', 'm1_quarterly', 'nn5_weekly'],
     'lhorizon': [*LongHorizonDataset.horizons_map],
 }
 
