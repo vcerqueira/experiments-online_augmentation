@@ -78,6 +78,7 @@ class GluontsDataset(LoadDataset):
         'electricity_weekly': 12,
         'solar_weekly': 12,
         'kaggle_web_traffic_weekly': 12,
+        'australian_electricity_demand': 12,
         'electricity_hourly': 24,
         'uber_tlc_hourly': 24,
         'ett_small_1h': 24,
@@ -96,7 +97,8 @@ class GluontsDataset(LoadDataset):
 
     frequency_map = {
         'nn5_weekly': 52,
-        'electricity_weekly': 4,
+        'electricity_weekly': 52,
+        'australian_electricity_demand': 52,
         'solar_weekly': 4,
         'kaggle_web_traffic_weekly': 4,
         'electricity_hourly': 24,
@@ -111,7 +113,8 @@ class GluontsDataset(LoadDataset):
 
     context_length = {
         'nn5_weekly': 52,
-        'electricity_weekly': 12,
+        'electricity_weekly': 52,
+        'australian_electricity_demand': 52,
         'solar_weekly': 12,
         'kaggle_web_traffic_weekly': 12,
         'electricity_hourly': 24,
@@ -128,7 +131,8 @@ class GluontsDataset(LoadDataset):
         'm1_quarterly': 22,
         'm1_monthly': 52,
         'nn5_weekly': 52,
-        'electricity_weekly': 100,
+        'australian_electricity_demand': 52,
+        'electricity_weekly': 52,
         'kaggle_web_traffic_weekly': 100,
         'traffic_nips': 100,
     }
@@ -136,6 +140,7 @@ class GluontsDataset(LoadDataset):
     frequency_pd = {
         'nn5_weekly': 'W',
         'electricity_weekly': 'W',
+        'australian_electricity_demand': 'W',
         'solar_weekly': 'W',
         'kaggle_web_traffic_weekly': 'W',
         'electricity_hourly': 'H',
@@ -158,6 +163,7 @@ class GluontsDataset(LoadDataset):
                   min_n_instances=None):
         # group = 'solar_weekly'
         dataset = get_dataset(group, regenerate=False)
+        # dataset = get_dataset('australian_electricity_demand', regenerate=True)
         train_list = dataset.train
 
         df_list = []
@@ -170,6 +176,9 @@ class GluontsDataset(LoadDataset):
                     periods=len(series["target"]),
                 ),
             )
+
+            if group == 'australian_electricity_demand':
+                s = s.resample('W').sum()
 
             s_df = s.reset_index()
             s_df.columns = ['ds', 'y']
