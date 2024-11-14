@@ -4,8 +4,6 @@ import pandas as pd
 from neuralforecast import NeuralForecast
 from utilsforecast.losses import mase, smape
 from utilsforecast.evaluation import evaluate
-from statsforecast.models import SeasonalNaive
-from statsforecast import StatsForecast
 
 from metaforecast.utils.data import DataUtils
 from metaforecast.synth.callbacks import OnlineDataAugmentationCallback
@@ -53,7 +51,7 @@ augmentation_params = {
     'min_len': min_len,
 }
 
-model_conf = {**input_data, **MODEL_CONFIG.get(MODEL)}
+model_conf = {**input_data, **MODEL_CONFIG.get(MODEL), 'batch_size': n_uids}
 
 tsgen_params = {k: v for k, v in augmentation_params.items()
                 if k in SYNTH_METHODS_PARAMS[TSGEN]}
@@ -64,13 +62,16 @@ tsgen = SYNTH_METHODS[TSGEN](**tsgen_params)
 
 train, test = DataUtils.train_test_split(df, horizon)
 
-augmentation_cb = OnlineDataAugmentationCallback(generator=tsgen)
+augmentation_cb = OnlineDACallback(generator=tsgen)
+da_metaf_cb = OnlineDataAugmentationCallback(generator=tsgen)
 
-models = [MODELS[MODEL](**model_conf),
-          MODELS[MODEL](**model_conf,
+models = [MODELS[MODEL](**model_conf,
                         callbacks=[augmentation_cb],
-                        alias=f'{MODEL}(OTF_{TSGEN})')]
-models_da = [MODELS[MODEL](**model_conf, alias=f'{MODEL}(A_{TSGEN})')]
+                        alias=f'{MODEL}(Custom_{TSGEN})'),
+          MODELS[MODEL](**model_conf,
+                        callbacks=[da_metaf_cb],
+                        alias=f'{MODEL}(OTF_{TSGEN})'),
+          ]
 
 # using original train
 
@@ -79,29 +80,9 @@ nf.fit(df=train, val_size=horizon)
 
 fcst = nf.predict()
 
-stats_models = [SeasonalNaive(season_length=freq_int)]
-sf = StatsForecast(models=stats_models, freq=freq_str, n_jobs=1)
-
-sf.fit(train)
-sf_fcst = sf.predict(h=horizon)
-
-# using augmented train
-apriori_tsgen = SYNTH_METHODS[TSGEN](**tsgen_params)
-
-train_synth = pd.concat([apriori_tsgen.transform(train) for i in range(N_REPS)]).reset_index(drop=True)
-# train_synth = apriori_tsgen.transform(train)
-
-train_ext = pd.concat([train, train_synth]).reset_index(drop=True)
-
-nf2 = NeuralForecast(models=models_da, freq=freq_str)
-nf2.fit(df=train_ext, val_size=horizon)
-fcst_ext = nf2.predict()
-
 # test set and evaluate
 
 test = test.merge(fcst.reset_index(), on=['unique_id', 'ds'], how="left")
-test = test.merge(fcst_ext.reset_index(), on=['unique_id', 'ds'], how="left")
-test = test.merge(sf_fcst.reset_index(), on=['unique_id', 'ds'], how="left")
 evaluation_df = evaluate(test, [partial(mase, seasonality=freq_int)], train_df=train)
 # evaluation_df = evaluate(test, [partial(mase, seasonality=freq_int), smape], train_df=train)
 # evaluation_df = evaluate(test, [smape], train_df=train)

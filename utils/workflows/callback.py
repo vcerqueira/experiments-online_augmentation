@@ -31,34 +31,18 @@ class OnlineDACallback(pl.Callback):
         """
         Applying data augmentation after getting a batch of time series for training
         """
-
-        # print(batch['temporal'])
-        print('\n')
-        print(batch['temporal'].shape)
-
-        print(batch['temporal'])
-
         temporal = batch['temporal']
-        print(temporal.type())
+        temporal, _ = torch.sort(temporal, dim=0)
 
         df_ = self.temporal_to_df(temporal)
-        print('df_')
-
         df_synth = self.generator.transform(df_)
-        print('df_synth')
-
         df_aug = pd.concat([df_, df_synth])
-        print('df_aug')
-
         temporal_aug = self.df_to_tensor(df_aug)
-        print('temporal_aug')
-        print(temporal_aug.type())
 
         if isinstance(temporal, torch.mps.Tensor):
             temporal_aug = temporal_aug.to('mps')
 
         batch['temporal'] = temporal_aug
-        print(batch['temporal'].shape)
 
         return batch
 
