@@ -48,7 +48,7 @@ tsgen = SeasonalMBB(seas_period=freq_int)
 augmentation_cb = OnlineDACallback(generator=tsgen)
 
 models = [#NHITS(**model_conf),
-          NHITS(**model_conf, callbacks=[augmentation_cb])]
+          NHITS(**model_conf, callbacks=[augmentation_cb], batch_size=111)]
 models_da = [NHITS(**model_conf)]
 
 # using original train

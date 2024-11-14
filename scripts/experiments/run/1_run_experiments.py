@@ -1,4 +1,5 @@
 from functools import partial
+import numpy as np
 import pandas as pd
 from neuralforecast import NeuralForecast
 from neuralforecast.models import NHITS
@@ -8,12 +9,12 @@ from statsforecast.models import SeasonalNaive
 from statsforecast import StatsForecast
 
 from metaforecast.utils.data import DataUtils
-# from metaforecast.synth.callbacks import OnlineDataAugmentationCallback
-from utils.workflows.callback import OnlineDataAugmentationCallback
-from metaforecast.synth import SeasonalMBB
+from metaforecast.synth.callbacks import OnlineDataAugmentationCallback
+# from utils.workflows.callback import OnlineDataAugmentationCallback
+from metaforecast.synth import SeasonalMBB, Jittering, Scaling, MagnitudeWarping, TimeWarping, DBA, TSMixup
 
 from utils.load_data.config import DATASETS
-from utils.config import MODEL_CONFIG
+from utils.config import MODEL_CONFIG, SYNTH_METHODS, SYNTH_METHODS_PARAMS
 
 # data_name, group = 'Gluonts', 'nn5_weekly'
 # data_name, group = 'Gluonts', 'electricity_weekly'
@@ -22,33 +23,51 @@ from utils.config import MODEL_CONFIG
 data_name, group = 'Misc', 'NN3'
 # data_name, group = 'Misc', 'AusDemandWeekly'
 MODEL = 'NHITS'
+TSGEN = 'SeasonalMBB'
 
-# ok, aos que eles usam adicionamos o m1_monthly e m1 quarterly, e o tourism??
-# depois fazemos sensibilidade com m4 monthly
+# LOADING DATA AND SETUP
 
-# criar pipeline onde lançamos o batch_size=len(uids) e escolhemos dentro da callback
 
+## LOADING DATA
 
 data_loader = DATASETS[data_name]
 min_samples = data_loader.min_samples[group]
 df, horizon, n_lags, freq_str, freq_int = data_loader.load_everything(group, min_n_instances=min_samples)
 
-input_data = {'input_size': n_lags, 'h': horizon, }
-
 print(df['unique_id'].value_counts())
 print(df.shape)
 
+## PREPARING CONFIGS
+
+n_uids = df['unique_id'].nunique()
+max_len = df['unique_id'].value_counts().max()
+min_len = df['unique_id'].value_counts().min()
+
+input_data = {'input_size': n_lags, 'h': horizon, }
+
+augmentation_params = {
+    'seas_period': freq_int,
+    'max_n_uids': int(np.round(np.log(111), 0)),
+    'max_len': max_len,
+    'min_len': min_len,
+
+}
+
 model_conf = {**input_data, **MODEL_CONFIG.get(MODEL)}
 
-# setup
+tsgen_params = {k: v for k, v in augmentation_params.items()
+                if k in SYNTH_METHODS_PARAMS[TSGEN]}
+
+tsgen = SYNTH_METHODS[TSGEN](**tsgen_params)
+
+## SPLITS AND MODELS
 
 train, test = DataUtils.train_test_split(df, horizon)
 
-tsgen = SeasonalMBB(seas_period=freq_int)
 augmentation_cb = OnlineDataAugmentationCallback(generator=tsgen)
 
-models = [#NHITS(**model_conf),
-          NHITS(**model_conf, callbacks=[augmentation_cb])]
+models = [  # NHITS(**model_conf),
+    NHITS(**model_conf, callbacks=[augmentation_cb])]
 models_da = [NHITS(**model_conf)]
 
 # using original train

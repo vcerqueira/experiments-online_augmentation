@@ -36,6 +36,8 @@ class OnlineDACallback(pl.Callback):
         print('\n')
         print(batch['temporal'].shape)
 
+        print(batch['temporal'])
+
         temporal = batch['temporal']
         print(temporal.type())
 
