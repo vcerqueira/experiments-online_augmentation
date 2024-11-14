@@ -9,7 +9,7 @@ from statsforecast import StatsForecast
 
 from metaforecast.utils.data import DataUtils
 # from metaforecast.synth.callbacks import OnlineDataAugmentationCallback
-from utils.workflows.callback import OnlineDataAugmentationCallback
+from utils.workflows.callback import OnlineDACallback
 from metaforecast.synth import SeasonalMBB
 
 from utils.load_data.config import DATASETS
@@ -45,7 +45,7 @@ model_conf = {**input_data, **MODEL_CONFIG.get(MODEL)}
 train, test = DataUtils.train_test_split(df, horizon)
 
 tsgen = SeasonalMBB(seas_period=freq_int)
-augmentation_cb = OnlineDataAugmentationCallback(generator=tsgen)
+augmentation_cb = OnlineDACallback(generator=tsgen)
 
 models = [#NHITS(**model_conf),
           NHITS(**model_conf, callbacks=[augmentation_cb])]
