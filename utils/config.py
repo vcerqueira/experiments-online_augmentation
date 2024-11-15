@@ -16,8 +16,8 @@ MODEL_CONFIG = {
         'start_padding_enabled': True,
         'accelerator': 'mps',
         # 'accelerator': 'cpu',
-        # 'max_steps': 2000,
-        'max_steps': 100,
+        'max_steps': 2000,
+        # 'max_steps': 100,
         'enable_checkpointing': True,
         'early_stop_patience_steps': 50,
     },
@@ -41,4 +41,22 @@ SYNTH_METHODS_PARAMS = {
     'TimeWarping': [],
     'DBA': ['max_n_uids'],
     'TSMixup': ['max_n_uids', 'max_len', 'min_len']
+}
+
+EXPERIMENTS_DATASETS = {
+    ('Gluonts', 'nn5_weekly'): 10,
+    ('Gluonts', 'electricity_weekly'): 10,
+    ('Gluonts', 'm1_monthly'): 10,
+    ('Gluonts', 'm1_quarterly'): 10,
+    ('Misc', 'NN3'): 10,
+    ('Misc', 'AusDemandWeekly'): 200,
+}
+
+BATCH_SIZE = {
+    ('Gluonts', 'nn5_weekly'): 16,
+    ('Gluonts', 'electricity_weekly'): 32,
+    ('Gluonts', 'm1_monthly'): 32,
+    ('Gluonts', 'm1_quarterly'): 32,
+    ('Misc', 'NN3'): 16,
+    ('Misc', 'AusDemandWeekly'): 2,
 }
