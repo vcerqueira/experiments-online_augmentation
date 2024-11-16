@@ -1,4 +1,4 @@
-from neuralforecast.models import NHITS
+from neuralforecast.models import NHITS, MLP
 from metaforecast.synth import (SeasonalMBB,
                                 Jittering,
                                 Scaling,
@@ -8,22 +8,33 @@ from metaforecast.synth import (SeasonalMBB,
                                 TSMixup)
 
 MODELS = {
-    'NHITS': NHITS
+    'NHITS': NHITS,
+    'MLP': MLP
 }
 
 MODEL = 'NHITS'
-TSGEN = 'SeasonalMBB'
+TSGEN = 'TSMixup'
 
 MODEL_CONFIG = {
     'NHITS': {
-        'start_padding_enabled': True,
+        'start_padding_enabled': False,
         'accelerator': 'mps',
         # 'accelerator': 'cpu',
-        'max_steps': 2000,
+        'max_steps': 100,
         # 'max_steps': 10,
         # 'max_steps': 100,
         'enable_checkpointing': True,
-        'early_stop_patience_steps': 50,
+        # 'early_stop_patience_steps': 5,
+    },
+    'MLP': {
+        'start_padding_enabled': True,
+        'accelerator': 'mps',
+        # 'accelerator': 'cpu',
+        'max_steps': 200,
+        # 'max_steps': 10,
+        # 'max_steps': 100,
+        # 'enable_checkpointing': True,
+        # 'early_stop_patience_steps': 30,
     },
 }
 

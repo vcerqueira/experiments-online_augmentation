@@ -1,3 +1,4 @@
+import os.path
 from functools import partial
 import numpy as np
 import pandas as pd
@@ -22,6 +23,11 @@ from utils.config import (MODEL,
 
 # LOADING DATA AND SETUP
 for data_name, group in REPS_BY_SERIES:
+
+    fp = f'assets/results/{data_name},{group},{MODEL},{TSGEN}.csv'
+
+    if os.path.exists(fp):
+        continue
 
     n_reps = REPS_BY_SERIES[(data_name, group)]
     data_loader = DATASETS[data_name]
@@ -114,7 +120,7 @@ for data_name, group in REPS_BY_SERIES:
     evaluation_df = evaluate(test, [partial(mase, seasonality=freq_int), smape], train_df=train)
     # evaluation_df = evaluate(test, [smape], train_df=train)
 
-    evaluation_df.to_csv(f'assets/results/{data_name},{group},{MODEL},{TSGEN}.csv')
+    evaluation_df.to_csv(fp)
 
     eval_df = evaluation_df.drop(columns=['metric', 'unique_id'])
 

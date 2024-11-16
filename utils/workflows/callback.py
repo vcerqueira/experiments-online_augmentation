@@ -34,41 +34,92 @@ class Counter(pl.Callback):
 
 class OnlineDACallback(pl.Callback):
 
-    def __init__(self, generator):
-        """Initialize online data augmentation callback.
-
-        Parameters
-        ----------
-        generator : BaseTimeSeriesGenerator
-            Time series generator object for data augmentation.
-            Must be one of:
-            - PureSyntheticGenerator: Creates fully synthetic series without reference
-            to a source dataset
-            - SemiSyntheticGenerator: Modifies existing series from a source dataset
-            - SemiSyntheticTransformer: Applies transformations to series from
-            a source dataset
-
-        """
+    def __init__(self, generator, max_steps: int):
         super().__init__()
 
         self.generator = generator
+        self.max_steps = max_steps
+        self.state = {'batches': 0}
+
+    # def on_train_batch_start2(self, trainer, pl_module, batch, batch_idx):
+    #     """
+    #     Applying data augmentation after getting a batch of time series for training
+    #     """
+    #     self.state['batches'] += 1
+    #
+    #     temporal = batch['temporal']
+    #     # temporal, _ = torch.sort(temporal, dim=0)
+    #
+    #     df_ = self.temporal_to_df(temporal)
+    #     df_synth = self.generator.transform(df_)
+    #     df_aug = pd.concat([df_, df_synth])
+    #     temporal_aug = self.df_to_tensor(df_aug)
+    #
+    #     if isinstance(temporal, torch.mps.Tensor):
+    #         temporal_aug = temporal_aug.to('mps')
+    #
+    #     batch['temporal'] = temporal_aug
+    #
+    #     return batch
 
     def on_train_batch_start(self, trainer, pl_module, batch, batch_idx):
         """
         Applying data augmentation after getting a batch of time series for training
         """
+        self.state['batches'] += 1
+
+        if self.state['batches'] < 30:
+            return batch
+
         temporal = batch['temporal']
-        temporal, _ = torch.sort(temporal, dim=0)
+        # temporal, _ = torch.sort(temporal, dim=0)
 
         df_ = self.temporal_to_df(temporal)
         df_synth = self.generator.transform(df_)
-        df_aug = pd.concat([df_, df_synth])
-        temporal_aug = self.df_to_tensor(df_aug)
+        # df_aug = pd.concat([df_, df_synth])
+        temporal_aug = self.df_to_tensor(df_synth)
 
         if isinstance(temporal, torch.mps.Tensor):
             temporal_aug = temporal_aug.to('mps')
 
         batch['temporal'] = temporal_aug
+
+        return batch
+
+    def on_train_batch_start3(self, trainer, pl_module, batch, batch_idx):
+        """
+        Applying data augmentation after getting a batch of time series for training,
+        with selective sampling based on training progress
+        """
+        self.state['batches'] += 1
+        temporal = batch['temporal']  # Shape: (32, 2, 144)
+
+        # Calculate sampling probability based on training progress
+        prob = self.state['batches'] / self.max_steps
+
+        # Create a boolean mask for sampling
+        mask = torch.rand(temporal.shape[0]) < prob
+
+        # Split the tensor into selected and non-selected samples
+        selected_temporal = temporal[mask]
+        non_selected_temporal = temporal[~mask]
+
+        if len(selected_temporal) > 0:  # Only process if we have selected samples
+            # Process selected samples
+            df_ = self.temporal_to_df(selected_temporal)
+            df_synth = self.generator.transform(df_)
+            df_aug = pd.concat([df_, df_synth])
+            temporal_aug = self.df_to_tensor(df_aug)
+
+            # Ensure the device is consistent
+            if isinstance(temporal, torch.mps.Tensor):
+                temporal_aug = temporal_aug.to('mps')
+
+            # Concatenate augmented and non-selected samples
+            batch['temporal'] = torch.cat([temporal_aug, non_selected_temporal], dim=0)
+        else:
+            # If no samples were selected, keep original batch
+            batch['temporal'] = temporal
 
         return batch
 

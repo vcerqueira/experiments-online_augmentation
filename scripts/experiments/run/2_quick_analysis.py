@@ -8,6 +8,9 @@ files = os.listdir(RESULTS_DIR)
 
 results_list = []
 for file in files:
+    if file == 'Gluonts,nn5_weekly,NHITS,SeasonalMBB.csv':
+        continue
+
     df_ = pd.read_csv(f'{RESULTS_DIR}/{file}')
     df_['dataset'] = file
 
@@ -15,7 +18,7 @@ for file in files:
 
 res = pd.concat(results_list)
 
-res_metric = res.query('metric=="smape"')
+res_metric = res.query('metric=="mase"')
 eval_df = res_metric.drop(columns=['metric', 'unique_id', 'Unnamed: 0'])
 
 print(eval_df.groupby('dataset').mean().T.mean(axis=1))
