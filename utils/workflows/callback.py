@@ -6,6 +6,32 @@ import torch
 import pytorch_lightning as pl
 
 
+class Counter(pl.Callback):
+    def __init__(self, what="epochs", verbose=True):
+        self.what = what
+        self.verbose = verbose
+        self.state = {"epochs": 0, "batches": 0}
+
+    @property
+    def state_key(self) -> str:
+        # note: we do not include `verbose` here on purpose
+        return f"Counter[what={self.what}]"
+
+    def on_train_epoch_end(self, *args, **kwargs):
+        if self.what == "epochs":
+            self.state["epochs"] += 1
+
+    def on_train_batch_end(self, *args, **kwargs):
+        if self.what == "batches":
+            self.state["batches"] += 1
+
+    def load_state_dict(self, state_dict):
+        self.state.update(state_dict)
+
+    def state_dict(self):
+        return self.state.copy()
+
+
 class OnlineDACallback(pl.Callback):
 
     def __init__(self, generator):

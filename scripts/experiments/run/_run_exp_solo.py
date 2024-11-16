@@ -15,7 +15,7 @@ from utils.config import (MODELS,
                           MODEL_CONFIG,
                           SYNTH_METHODS,
                           SYNTH_METHODS_PARAMS,
-                          EXPERIMENTS_DATASETS,
+                          REPS_BY_SERIES,
                           BATCH_SIZE)
 
 # data_name, group = 'Gluonts', 'm1_quarterly'
