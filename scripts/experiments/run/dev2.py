@@ -9,7 +9,7 @@ from statsforecast import StatsForecast
 
 from metaforecast.utils.data import DataUtils
 from metaforecast.synth.callbacks import OnlineDataAugmentationCallback
-from utils.workflows.callback import OnlineDACallback, OnlineDACallback2
+from utils.workflows.callback import OnlineDACallback
 
 from utils.load_data.config import DATASETS
 from utils.config import (MODELS,
@@ -21,10 +21,10 @@ from utils.config import (MODELS,
 
 # data_name, group = 'Gluonts', 'm1_quarterly'
 # data_name, group = 'Misc', 'NN3'
-# data_name, group = 'Gluonts', 'm1_monthly'
+data_name, group = 'Gluonts', 'm1_monthly'
 # data_name, group = 'M3', 'Monthly'
 # data_name, group = 'M3', 'Quarterly'
-data_name, group = 'Gluonts', 'nn5_weekly'
+# data_name, group = 'Gluonts', 'nn5_weekly'
 # data_name, group = 'Gluonts', 'electricity_weekly'
 # data_name, group = 'Misc', 'AusDemandWeekly'
 
@@ -78,24 +78,7 @@ tsgen = SYNTH_METHODS[TSGEN](**tsgen_params)
 train, test = DataUtils.train_test_split(df, horizon)
 
 augmentation_cb = OnlineDataAugmentationCallback(generator=tsgen)
-# augmentation_cb2 = OnlineDACallback(generator=tsgen, max_steps=1)
-# augmentation_cb3 = OnlineDACallback2(generator=SYNTH_METHODS[TSGEN],
-#                                      sample_params=[{'sigma': 0.03},
-#                                                     {'sigma': 0.075},
-#                                                     {'sigma': 0.1},
-#                                                     {'sigma': 0.3},
-#                                                     {'sigma': 0.4},
-#                                                     {'sigma': 0.7},
-#                                                     {'sigma': 0.9},
-#                                                     {'sigma': 0.2}])
-
-augmentation_cb3 = OnlineDACallback2(generator=SYNTH_METHODS[TSGEN],
-                                     sample_params=[{'log': True, 'seas_period': freq_int},
-                                                    {'log': False, 'seas_period': freq_int},
-                                                    {'log': True, 'seas_period': freq_int * 2},
-                                                    {'log': True, 'seas_period': int(freq_int / 2)},
-                                                    {'log': False, 'seas_period': freq_int * 2},
-                                                    ])
+augmentation_cb2 = OnlineDACallback(generator=tsgen, max_steps=1)
 
 models = [MODELS[MODEL](**model_conf,
                         alias='Original'),
@@ -103,10 +86,9 @@ models = [MODELS[MODEL](**model_conf,
                         callbacks=[augmentation_cb],
                         alias='Online'),
           MODELS[MODEL](**model_conf,
-                        callbacks=[augmentation_cb3],
-                        alias='Online3')
+                        callbacks=[augmentation_cb2],
+                        alias='Online2')
           ]
-
 models_da_max = [MODELS[MODEL](**model_conf_2xbatch, alias=f'OfflineMax')]
 
 # using original train
@@ -127,16 +109,10 @@ apriori_tsgen = SYNTH_METHODS[TSGEN](**tsgen_params)
 train_synth = pd.concat([apriori_tsgen.transform(train) for i in range(n_reps)]).reset_index(drop=True)
 train_ext = pd.concat([train, train_synth]).reset_index(drop=True)
 
-n_reps_from_ref = pd.read_csv('assets/n_epochs/n_epochs.csv').values[0][0]
-
 # using max augmented train
 apriori_tsgen = SYNTH_METHODS[TSGEN](**tsgen_params)
-# train_synth_max = pd.concat([apriori_tsgen.transform(train) for i in range(model_params['max_steps'])]).reset_index(drop=True)
-n_series_by_uid = int(n_reps_from_ref*model_conf['batch_size'] / train['unique_id'].nunique())
-
-# train_synth_max = apriori_tsgen.transform(train, n_series_by_uid)
-train_synth_max = pd.concat([apriori_tsgen.transform(train) for i in range(n_series_by_uid)]).reset_index(drop=True)
-
+train_synth_max = pd.concat([apriori_tsgen.transform(train)
+                             for i in range(model_params['max_steps'])]).reset_index(drop=True)
 train_ext_max = pd.concat([train, train_synth_max]).reset_index(drop=True)
 
 nf_da_max = NeuralForecast(models=models_da_max, freq=freq_str)

@@ -42,6 +42,8 @@ for data_name, group in REPS_BY_SERIES:
     n_uids = df['unique_id'].nunique()
     max_len = df['unique_id'].value_counts().max()
     min_len = df['unique_id'].value_counts().min()
+    if min_len==max_len:
+        min_len = int(min_len/2)
 
     input_data = {'input_size': n_lags,  'h': horizon}
 

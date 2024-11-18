@@ -30,7 +30,7 @@ class M3Dataset(LoadDataset):
     }
 
     min_samples = {
-        'Quarterly': 100,
+        'Quarterly': 33,
         'Monthly': 130,
         'Yearly': 10,
     }

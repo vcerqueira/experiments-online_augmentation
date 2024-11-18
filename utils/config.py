@@ -13,28 +13,29 @@ MODELS = {
 }
 
 MODEL = 'NHITS'
-TSGEN = 'TSMixup'
+# TSGEN = 'Scaling'
+TSGEN = 'SeasonalMBB'
+# TSGEN = 'Jittering'
 
 MODEL_CONFIG = {
     'NHITS': {
         'start_padding_enabled': False,
         'accelerator': 'mps',
         # 'accelerator': 'cpu',
-        'max_steps': 100,
-        # 'max_steps': 10,
-        # 'max_steps': 100,
+        'max_steps': 150,
+        'val_check_steps': 50,
         'enable_checkpointing': True,
-        # 'early_stop_patience_steps': 5,
+        'early_stop_patience_steps': 3,
     },
     'MLP': {
-        'start_padding_enabled': True,
+        'start_padding_enabled': False,
         'accelerator': 'mps',
         # 'accelerator': 'cpu',
         'max_steps': 200,
         # 'max_steps': 10,
         # 'max_steps': 100,
         # 'enable_checkpointing': True,
-        # 'early_stop_patience_steps': 30,
+        'early_stop_patience_steps': 3,
     },
 }
 
@@ -60,6 +61,8 @@ SYNTH_METHODS_PARAMS = {
 
 REPS_BY_SERIES = {
     ('Gluonts', 'nn5_weekly'): 10,
+    ('M3', 'Monthly'): 10,
+    ('M3', 'Quarterly'): 10,
     ('Gluonts', 'electricity_weekly'): 10,
     ('Gluonts', 'm1_monthly'): 10,
     ('Gluonts', 'm1_quarterly'): 10,
@@ -69,6 +72,8 @@ REPS_BY_SERIES = {
 
 BATCH_SIZE = {
     ('Gluonts', 'nn5_weekly'): 16,
+    ('M3', 'Monthly'): 32,
+    ('M3', 'Quarterly'): 32,
     ('Gluonts', 'electricity_weekly'): 32,
     ('Gluonts', 'm1_monthly'): 32,
     ('Gluonts', 'm1_quarterly'): 32,
