@@ -1,4 +1,4 @@
 # experiments-online_augmentation
 
-
-get project from ondat's repo
+use original to optimize max steps
+it overfits quite easily

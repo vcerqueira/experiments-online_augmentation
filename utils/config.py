@@ -22,10 +22,10 @@ MODEL_CONFIG = {
         'start_padding_enabled': False,
         'accelerator': 'mps',
         # 'accelerator': 'cpu',
-        'max_steps': 150,
+        'max_steps': 250,
         'val_check_steps': 50,
         'enable_checkpointing': True,
-        'early_stop_patience_steps': 3,
+        'early_stop_patience_steps': 5,
     },
     'MLP': {
         'start_padding_enabled': False,
