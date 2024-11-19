@@ -17,14 +17,15 @@ from utils.config import (MODELS,
                           SYNTH_METHODS,
                           SYNTH_METHODS_PARAMS,
                           REPS_BY_SERIES,
-                          BATCH_SIZE, MODEL, TSGEN)
+                          BATCH_SIZE, MODEL, TSGEN, MAX_STEPS)
+
+# data_name, group = 'Gluonts', 'nn5_weekly'
+data_name, group = 'Misc', 'NN3'
 
 # data_name, group = 'Gluonts', 'm1_quarterly'
-data_name, group = 'Misc', 'NN3'
 # data_name, group = 'Gluonts', 'm1_monthly'
 # data_name, group = 'M3', 'Monthly'
 # data_name, group = 'M3', 'Quarterly'
-# data_name, group = 'Gluonts', 'nn5_weekly'
 # data_name, group = 'Gluonts', 'electricity_weekly'
 # data_name, group = 'Misc', 'AusDemandWeekly'
 
@@ -40,6 +41,7 @@ data_loader = DATASETS[data_name]
 min_samples = data_loader.min_samples[group]
 df, horizon, n_lags, freq_str, freq_int = data_loader.load_everything(group, min_n_instances=min_samples)
 batch_size = BATCH_SIZE[data_name, group]
+max_steps = MAX_STEPS[data_name, group]
 
 print(df['unique_id'].value_counts())
 print(df.shape)
@@ -66,9 +68,10 @@ if model_params['start_padding_enabled'] and group == 'AusDemandWeekly':
     model_params['start_padding_enabled'] = False
 
 model_conf = {**input_data, **model_params,
-              'batch_size': batch_size}
+              'batch_size': batch_size, 'max_steps': max_steps}
 model_conf_2xbatch = {**input_data, **model_params,
-                      'batch_size': batch_size * 2}
+                      'batch_size': batch_size * 2,
+                      'max_steps': max_steps}
 
 tsgen_params = {k: v for k, v in augmentation_params.items() if k in SYNTH_METHODS_PARAMS[TSGEN]}
 
@@ -93,7 +96,7 @@ augmentation_cb3 = OnlineDACallback2(generator=SYNTH_METHODS[TSGEN],
                                      sample_params=[{'log': True, 'seas_period': freq_int},
                                                     {'log': False, 'seas_period': freq_int},
                                                     {'log': True, 'seas_period': freq_int * 2},
-                                                    {'log': True, 'seas_period': int(freq_int / 2)},
+                                                    # {'log': True, 'seas_period': int(freq_int / 2)},
                                                     {'log': False, 'seas_period': freq_int * 2},
                                                     ])
 
@@ -150,7 +153,7 @@ for i in range(n_series_by_uid):
     pars = [{'log': True, 'seas_period': freq_int},
             {'log': False, 'seas_period': freq_int},
             {'log': True, 'seas_period': freq_int * 2},
-            {'log': True, 'seas_period': int(freq_int / 2)},
+            # {'log': True, 'seas_period': int(freq_int / 2)},
             {'log': False, 'seas_period': freq_int * 2},
             ]
 

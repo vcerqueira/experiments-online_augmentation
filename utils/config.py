@@ -17,13 +17,30 @@ MODEL = 'NHITS'
 TSGEN = 'SeasonalMBB'
 # TSGEN = 'Jittering'
 
+
+MAX_STEPS = {
+    # ('Gluonts', 'nn5_weekly'): 150,
+    ('Gluonts', 'nn5_weekly'): 500,
+    # ('Gluonts', 'm1_quarterly'): 100,
+    ('Gluonts', 'm1_quarterly'): 500,
+    # ('Misc', 'NN3'): 250,
+    ('Misc', 'NN3'): 500,
+    # ('Gluonts', 'm1_monthly'): 250,
+    ('Gluonts', 'm1_monthly'): 500,
+    ('Gluonts', 'electricity_weekly'): 500,
+    # ('Misc', 'AusDemandWeekly'): 250,
+    ('Misc', 'AusDemandWeekly'): 500,
+    ('M3', 'Monthly'): 750,
+    ('M3', 'Quarterly'): 1000,
+}
+
 MODEL_CONFIG = {
     'NHITS': {
         'start_padding_enabled': False,
         'accelerator': 'mps',
         # 'accelerator': 'cpu',
-        'max_steps': 250,
-        'val_check_steps': 50,
+        # 'max_steps': 500,
+        'val_check_steps': 25,
         'enable_checkpointing': True,
         'early_stop_patience_steps': 5,
     },
@@ -31,7 +48,7 @@ MODEL_CONFIG = {
         'start_padding_enabled': False,
         'accelerator': 'mps',
         # 'accelerator': 'cpu',
-        'max_steps': 200,
+        # 'max_steps': 200,
         # 'max_steps': 10,
         # 'max_steps': 100,
         # 'enable_checkpointing': True,
