@@ -30,13 +30,13 @@ MAX_STEPS = {
     ('Gluonts', 'electricity_weekly'): 500,
     # ('Misc', 'AusDemandWeekly'): 250,
     ('Misc', 'AusDemandWeekly'): 500,
-    ('M3', 'Monthly'): 750,
+    ('M3', 'Monthly'): 1000,
     ('M3', 'Quarterly'): 1000,
 }
 
 MODEL_CONFIG = {
     'NHITS': {
-        'start_padding_enabled': False,
+        'start_padding_enabled': True,
         'accelerator': 'mps',
         # 'accelerator': 'cpu',
         # 'max_steps': 500,
@@ -96,4 +96,19 @@ BATCH_SIZE = {
     ('Gluonts', 'm1_quarterly'): 32,
     ('Misc', 'NN3'): 16,
     ('Misc', 'AusDemandWeekly'): 2,
+}
+
+SYNTH_METHODS_PARAM_VALUES = {
+    'SeasonalMBB': {'log': [True, False], 'seas_period_multiplier': [.5, 1, 2, 3]},
+    'Jittering': {'sigma': [0.05, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]},
+    'Scaling': {'sigma': [0.05, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]},
+    'MagnitudeWarping': {'sigma': [0.05, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9],
+                         'knots': [3, 4, 5, 7, 9]},
+    'TimeWarping': {'sigma': [0.05, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9],
+                    'knots': [3, 4, 5, 7, 9]},
+    'DBA': {'max_n_uids': [5, 7, 10, 15],
+            'dirichlet_alpha': [0.1, 0.5, 1.0, 1.5, 2.0, 5.0],
+            'max_iter': [3, 5, 10]},
+    'TSMixup': {'max_n_uids': [5, 7, 10, 15],
+                'dirichlet_alpha': [0.1, 0.5, 1.0, 1.5, 2.0, 5.0]}
 }

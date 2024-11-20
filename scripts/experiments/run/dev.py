@@ -9,22 +9,23 @@ from statsforecast import StatsForecast
 
 from metaforecast.utils.data import DataUtils
 from metaforecast.synth.callbacks import OnlineDataAugmentationCallback
-from utils.workflows.callback import OnlineDACallback, OnlineDACallback2
+from utils.workflows.callback import OnlineDACallbackRandPars
+from utils.workflows.params import get_all_combinations
 
 from utils.load_data.config import DATASETS
 from utils.config import (MODELS,
                           MODEL_CONFIG,
                           SYNTH_METHODS,
-                          SYNTH_METHODS_PARAMS,
+                          SYNTH_METHODS_PARAMS, SYNTH_METHODS_PARAM_VALUES,
                           REPS_BY_SERIES,
                           BATCH_SIZE, MODEL, TSGEN, MAX_STEPS)
 
 # data_name, group = 'Gluonts', 'nn5_weekly'
-data_name, group = 'Misc', 'NN3'
+# data_name, group = 'Misc', 'NN3'
 
 # data_name, group = 'Gluonts', 'm1_quarterly'
 # data_name, group = 'Gluonts', 'm1_monthly'
-# data_name, group = 'M3', 'Monthly'
+data_name, group = 'M3', 'Monthly'
 # data_name, group = 'M3', 'Quarterly'
 # data_name, group = 'Gluonts', 'electricity_weekly'
 # data_name, group = 'Misc', 'AusDemandWeekly'
@@ -64,8 +65,6 @@ augmentation_params = {
 }
 
 model_params = MODEL_CONFIG.get(MODEL)
-if model_params['start_padding_enabled'] and group == 'AusDemandWeekly':
-    model_params['start_padding_enabled'] = False
 
 model_conf = {**input_data, **model_params,
               'batch_size': batch_size, 'max_steps': max_steps}
@@ -81,39 +80,29 @@ tsgen = SYNTH_METHODS[TSGEN](**tsgen_params)
 train, test = DataUtils.train_test_split(df, horizon)
 
 augmentation_cb = OnlineDataAugmentationCallback(generator=tsgen)
-# augmentation_cb2 = OnlineDACallback(generator=tsgen, max_steps=1)
-# augmentation_cb3 = OnlineDACallback2(generator=SYNTH_METHODS[TSGEN],
-#                                      sample_params=[{'sigma': 0.03},
-#                                                     {'sigma': 0.075},
-#                                                     {'sigma': 0.1},
-#                                                     {'sigma': 0.3},
-#                                                     {'sigma': 0.4},
-#                                                     {'sigma': 0.7},
-#                                                     {'sigma': 0.9},
-#                                                     {'sigma': 0.2}])
 
-augmentation_cb3 = OnlineDACallback2(generator=SYNTH_METHODS[TSGEN],
-                                     sample_params=[{'log': True, 'seas_period': freq_int},
-                                                    {'log': False, 'seas_period': freq_int},
-                                                    {'log': True, 'seas_period': freq_int * 2},
-                                                    # {'log': True, 'seas_period': int(freq_int / 2)},
-                                                    {'log': False, 'seas_period': freq_int * 2},
-                                                    ])
+sample_pars = SYNTH_METHODS_PARAM_VALUES[TSGEN]
+if 'seas_period_multiplier' in sample_pars:
+    sample_pars['seas_period'] = [freq_int * x for x in sample_pars['seas_period_multiplier']]
+    sample_pars.pop('seas_period_multiplier')
+
+sample_params_comb = get_all_combinations(sample_pars)
+
+augmentation_cb3 = OnlineDACallbackRandPars(generator=SYNTH_METHODS[TSGEN],
+                                     sample_params=sample_params_comb)
 
 models = [MODELS[MODEL](**model_conf,
                         alias='Original'),
           MODELS[MODEL](**model_conf,
                         callbacks=[augmentation_cb],
-                        alias='Online'),
+                        alias='OnlineFixed'),
           MODELS[MODEL](**model_conf,
                         callbacks=[augmentation_cb3],
-                        alias='Online3')
-          ]
+                        alias='Online')]
 
 models_da = [MODELS[MODEL](**model_conf_2xbatch, alias=f'Offline1')]
 models_da_max = [MODELS[MODEL](**model_conf_2xbatch, alias=f'OfflineMax')]
 models_da_rng = [MODELS[MODEL](**model_conf_2xbatch, alias=f'OfflineRNG')]
-
 
 # using original train
 
@@ -141,7 +130,6 @@ n_reps_from_ref = pd.read_csv('assets/n_epochs/n_epochs.csv').values[0][0]
 
 # using max augmented train
 apriori_tsgen = SYNTH_METHODS[TSGEN](**tsgen_params)
-# train_synth_max = pd.concat([apriori_tsgen.transform(train) for i in range(model_params['max_steps'])]).reset_index(drop=True)
 n_series_by_uid = int(n_reps_from_ref * model_conf['batch_size'] / train['unique_id'].nunique())
 
 # train_synth_max = apriori_tsgen.transform(train, n_series_by_uid)
@@ -150,14 +138,7 @@ train_ext_max = pd.concat([train, train_synth_max]).reset_index(drop=True)
 
 train_synth_rng_l = []
 for i in range(n_series_by_uid):
-    pars = [{'log': True, 'seas_period': freq_int},
-            {'log': False, 'seas_period': freq_int},
-            {'log': True, 'seas_period': freq_int * 2},
-            # {'log': True, 'seas_period': int(freq_int / 2)},
-            {'log': False, 'seas_period': freq_int * 2},
-            ]
-
-    pars_i = np.random.choice(pars)
+    pars_i = np.random.choice(sample_params_comb)
 
     tsgen_i = SYNTH_METHODS[TSGEN](**pars_i)
 
@@ -183,8 +164,8 @@ test = test.merge(fcst_extmax.reset_index(), on=['unique_id', 'ds'], how="left")
 test = test.merge(fcst_ext.reset_index(), on=['unique_id', 'ds'], how="left")
 test = test.merge(fcst_extrng.reset_index(), on=['unique_id', 'ds'], how="left")
 test = test.merge(sf_fcst.reset_index(), on=['unique_id', 'ds'], how="left")
-# evaluation_df = evaluate(test, [partial(mase, seasonality=freq_int)], train_df=train)
-evaluation_df = evaluate(test, [partial(mase, seasonality=freq_int), smape], train_df=train)
+evaluation_df = evaluate(test, [partial(mase, seasonality=freq_int)], train_df=train)
+# evaluation_df = evaluate(test, [partial(mase, seasonality=freq_int), smape], train_df=train)
 # evaluation_df = evaluate(test, [smape], train_df=train)
 
 
@@ -192,15 +173,3 @@ eval_df = evaluation_df.drop(columns=['metric', 'unique_id'])
 
 print(eval_df.mean())
 print(eval_df.apply(lambda x: x[x > x.quantile(.95)].mean()))
-#
-# Original         0.612406
-# Online           0.618741
-# Online2          0.609907
-# OfflineMax       0.617923
-# SeasonalNaive    0.736962
-# dtype: float64
-# Original         3.633712
-# Online           3.623470
-# Online2          3.590668
-# OfflineMax       3.603283
-# SeasonalNaive    3.818040
