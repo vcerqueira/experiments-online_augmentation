@@ -233,28 +233,28 @@ class OnlineDACallbackRandPars(pl.Callback):
 
         return batch
 
-    def on_validation_batch_start(self, trainer, pl_module, batch, batch_idx, dataloader_idx=0):
-        """
-        Applying data augmentation after getting a batch of time series for training
-        """
-        # self.state['batches'] += 1
-
-        ts_gen = copy.deepcopy(self.generator)(**np.random.choice(self.sample_params))
-
-        temporal = batch['temporal']
-        # temporal, _ = torch.sort(temporal, dim=0)
-
-        df_ = self.temporal_to_df(temporal)
-        df_synth = ts_gen.transform(df_)
-        df_aug = pd.concat([df_, df_synth])
-        temporal_aug = self.df_to_tensor(df_aug)
-
-        if isinstance(temporal, torch.mps.Tensor):
-            temporal_aug = temporal_aug.to('mps')
-
-        batch['temporal'] = temporal_aug
-
-        return batch
+    # def on_validation_batch_start(self, trainer, pl_module, batch, batch_idx, dataloader_idx=0):
+    #     """
+    #     Applying data augmentation after getting a batch of time series for training
+    #     """
+    #     # self.state['batches'] += 1
+    #
+    #     ts_gen = copy.deepcopy(self.generator)(**np.random.choice(self.sample_params))
+    #
+    #     temporal = batch['temporal']
+    #     # temporal, _ = torch.sort(temporal, dim=0)
+    #
+    #     df_ = self.temporal_to_df(temporal)
+    #     df_synth = ts_gen.transform(df_)
+    #     df_aug = pd.concat([df_, df_synth])
+    #     temporal_aug = self.df_to_tensor(df_aug)
+    #
+    #     if isinstance(temporal, torch.mps.Tensor):
+    #         temporal_aug = temporal_aug.to('mps')
+    #
+    #     batch['temporal'] = temporal_aug
+    #
+    #     return batch
 
     @staticmethod
     def temporal_to_df(temporal: torch.Tensor) -> pd.DataFrame:

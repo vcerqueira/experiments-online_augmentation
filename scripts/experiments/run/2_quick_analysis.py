@@ -24,8 +24,9 @@ res_metric = res.query('metric=="mase"')
 eval_df = res_metric.drop(columns=['metric', 'unique_id', 'Unnamed: 0'])
 
 print(eval_df.groupby('dataset').mean().T.mean(axis=1))
-print(eval_df.groupby('dataset').mean().T.median(axis=1))
+print(eval_df.groupby('dataset').median().T.mean(axis=1))
 print(eval_df.groupby('dataset').mean().T.rank().T.mean())
+print(eval_df.groupby('dataset').median().T.rank().T.mean())
 print(eval_df.groupby('dataset').apply(lambda x: x[x > x.quantile(.9)].mean().T).mean())
 
 eval_df.groupby('dataset').mean().reset_index(drop=True)

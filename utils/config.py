@@ -13,30 +13,32 @@ MODELS = {
 }
 
 MODEL = 'NHITS'
-# TSGEN = 'Scaling'
-TSGEN = 'SeasonalMBB'
+TSGEN = 'DBA'
+# TSGEN = 'SeasonalMBB'
 # TSGEN = 'Jittering'
 
 
 MAX_STEPS = {
     # ('Gluonts', 'nn5_weekly'): 150,
-    ('Gluonts', 'nn5_weekly'): 500,
+    ('Gluonts', 'nn5_weekly'): 250,
     # ('Gluonts', 'm1_quarterly'): 100,
-    ('Gluonts', 'm1_quarterly'): 500,
+    ('Gluonts', 'm1_quarterly'): 250,
     # ('Misc', 'NN3'): 250,
-    ('Misc', 'NN3'): 500,
+    ('Misc', 'NN3'): 250,
     # ('Gluonts', 'm1_monthly'): 250,
-    ('Gluonts', 'm1_monthly'): 500,
-    ('Gluonts', 'electricity_weekly'): 500,
+    ('Gluonts', 'm1_monthly'): 250,
+    ('Gluonts', 'electricity_weekly'): 250,
     # ('Misc', 'AusDemandWeekly'): 250,
-    ('Misc', 'AusDemandWeekly'): 500,
+    ('Misc', 'AusDemandWeekly'): 250,
     ('M3', 'Monthly'): 1000,
+    ('Tourism', 'Monthly'): 1000,
     ('M3', 'Quarterly'): 1000,
+    ('Tourism', 'Quarterly'): 1000,
 }
 
 MODEL_CONFIG = {
     'NHITS': {
-        'start_padding_enabled': True,
+        # 'start_padding_enabled': False,
         'accelerator': 'mps',
         # 'accelerator': 'cpu',
         # 'max_steps': 500,
@@ -79,7 +81,9 @@ SYNTH_METHODS_PARAMS = {
 REPS_BY_SERIES = {
     ('Gluonts', 'nn5_weekly'): 10,
     ('M3', 'Monthly'): 10,
+    ('Tourism', 'Monthly'): 10,
     ('M3', 'Quarterly'): 10,
+    ('Tourism', 'Quarterly'): 10,
     ('Gluonts', 'electricity_weekly'): 10,
     ('Gluonts', 'm1_monthly'): 10,
     ('Gluonts', 'm1_quarterly'): 10,
@@ -90,7 +94,9 @@ REPS_BY_SERIES = {
 BATCH_SIZE = {
     ('Gluonts', 'nn5_weekly'): 16,
     ('M3', 'Monthly'): 32,
+    ('Tourism', 'Monthly'): 32,
     ('M3', 'Quarterly'): 32,
+    ('Tourism', 'Quarterly'): 32,
     ('Gluonts', 'electricity_weekly'): 32,
     ('Gluonts', 'm1_monthly'): 32,
     ('Gluonts', 'm1_quarterly'): 32,
@@ -103,9 +109,9 @@ SYNTH_METHODS_PARAM_VALUES = {
     'Jittering': {'sigma': [0.05, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]},
     'Scaling': {'sigma': [0.05, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]},
     'MagnitudeWarping': {'sigma': [0.05, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9],
-                         'knots': [3, 4, 5, 7, 9]},
+                         'knot': [3, 4, 5, 7, 9]},
     'TimeWarping': {'sigma': [0.05, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9],
-                    'knots': [3, 4, 5, 7, 9]},
+                    'knot': [3, 4, 5, 7, 9]},
     'DBA': {'max_n_uids': [5, 7, 10, 15],
             'dirichlet_alpha': [0.1, 0.5, 1.0, 1.5, 2.0, 5.0],
             'max_iter': [3, 5, 10]},

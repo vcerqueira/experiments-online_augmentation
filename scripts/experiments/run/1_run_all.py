@@ -83,7 +83,7 @@ for data_name, group in REPS_BY_SERIES:
     augmentation_cb3 = OnlineDACallbackRandPars(generator=SYNTH_METHODS[TSGEN],
                                                 sample_params=sample_params_comb)
 
-    models = [MODELS[MODEL](**model_conf,
+    models = [MODELS[MODEL](**model_conf_2xbatch,
                             alias='Original'),
               MODELS[MODEL](**model_conf,
                             callbacks=[augmentation_cb],
