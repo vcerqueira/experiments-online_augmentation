@@ -13,23 +13,18 @@ MODELS = {
 }
 
 MODEL = 'NHITS'
-TSGEN = 'DBA'
+TSGEN = 'TSMixup'
 # TSGEN = 'SeasonalMBB'
 # TSGEN = 'Jittering'
 
 
 MAX_STEPS = {
-    # ('Gluonts', 'nn5_weekly'): 150,
-    ('Gluonts', 'nn5_weekly'): 250,
-    # ('Gluonts', 'm1_quarterly'): 100,
-    ('Gluonts', 'm1_quarterly'): 250,
-    # ('Misc', 'NN3'): 250,
-    ('Misc', 'NN3'): 250,
-    # ('Gluonts', 'm1_monthly'): 250,
-    ('Gluonts', 'm1_monthly'): 250,
-    ('Gluonts', 'electricity_weekly'): 250,
-    # ('Misc', 'AusDemandWeekly'): 250,
-    ('Misc', 'AusDemandWeekly'): 250,
+    ('Gluonts', 'nn5_weekly'): 500,
+    ('Gluonts', 'm1_quarterly'): 500,
+    ('Misc', 'NN3'): 500,
+    ('Gluonts', 'm1_monthly'): 500,
+    ('Gluonts', 'electricity_weekly'): 500,
+    ('Misc', 'AusDemandWeekly'): 500,
     ('M3', 'Monthly'): 1000,
     ('Tourism', 'Monthly'): 1000,
     ('M3', 'Quarterly'): 1000,
@@ -38,13 +33,13 @@ MAX_STEPS = {
 
 MODEL_CONFIG = {
     'NHITS': {
-        # 'start_padding_enabled': False,
+        'start_padding_enabled': True,
         'accelerator': 'mps',
         # 'accelerator': 'cpu',
         # 'max_steps': 500,
-        'val_check_steps': 25,
+        'val_check_steps': 50,
         'enable_checkpointing': True,
-        'early_stop_patience_steps': 5,
+        'early_stop_patience_steps': 3,
     },
     'MLP': {
         'start_padding_enabled': False,
@@ -79,11 +74,11 @@ SYNTH_METHODS_PARAMS = {
 }
 
 REPS_BY_SERIES = {
-    ('Gluonts', 'nn5_weekly'): 10,
     ('M3', 'Monthly'): 10,
-    ('Tourism', 'Monthly'): 10,
     ('M3', 'Quarterly'): 10,
+    ('Tourism', 'Monthly'): 10,
     ('Tourism', 'Quarterly'): 10,
+    ('Gluonts', 'nn5_weekly'): 10,
     ('Gluonts', 'electricity_weekly'): 10,
     ('Gluonts', 'm1_monthly'): 10,
     ('Gluonts', 'm1_quarterly'): 10,
@@ -105,16 +100,16 @@ BATCH_SIZE = {
 }
 
 SYNTH_METHODS_PARAM_VALUES = {
-    'SeasonalMBB': {'log': [True, False], 'seas_period_multiplier': [.5, 1, 2, 3]},
+    'SeasonalMBB': {'log': [True, False], 'seas_period_multiplier': [.5, 1, 2]},
     'Jittering': {'sigma': [0.05, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]},
     'Scaling': {'sigma': [0.05, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]},
     'MagnitudeWarping': {'sigma': [0.05, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9],
                          'knot': [3, 4, 5, 7, 9]},
     'TimeWarping': {'sigma': [0.05, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9],
                     'knot': [3, 4, 5, 7, 9]},
-    'DBA': {'max_n_uids': [5, 7, 10, 15],
+    'DBA': {'max_n_uids': [3, 5, 7, 10],
             'dirichlet_alpha': [0.1, 0.5, 1.0, 1.5, 2.0, 5.0],
-            'max_iter': [3, 5, 10]},
-    'TSMixup': {'max_n_uids': [5, 7, 10, 15],
+            'max_iter': [2, 3]},
+    'TSMixup': {'max_n_uids': [3, 5, 7, 10],
                 'dirichlet_alpha': [0.1, 0.5, 1.0, 1.5, 2.0, 5.0]}
 }

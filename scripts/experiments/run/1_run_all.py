@@ -3,14 +3,14 @@ from functools import partial
 import numpy as np
 import pandas as pd
 from neuralforecast import NeuralForecast
-from utilsforecast.losses import mase
+from utilsforecast.losses import mase, smape
 from utilsforecast.evaluation import evaluate
 from statsforecast.models import SeasonalNaive
 from statsforecast import StatsForecast
 
 from metaforecast.utils.data import DataUtils
 from metaforecast.synth.callbacks import OnlineDataAugmentationCallback
-from utils.workflows.callback import OnlineDACallbackRandPars
+from utils.workflows.callback import OnlineDACallbackRandPars, OnlineDACallbackRandGen
 from utils.workflows.params import get_all_combinations
 
 from utils.load_data.config import DATASETS
@@ -41,8 +41,8 @@ for data_name, group in REPS_BY_SERIES:
 
     # PREPARING CONFIGS
     n_uids = df['unique_id'].nunique()
-    max_len = df['unique_id'].value_counts().max()
-    min_len = df['unique_id'].value_counts().min()
+    max_len = df['unique_id'].value_counts().max() - (2 * horizon)
+    min_len = df['unique_id'].value_counts().min() - (2 * horizon)
 
     input_data = {'input_size': n_lags, 'h': horizon}
 
@@ -68,15 +68,25 @@ for data_name, group in REPS_BY_SERIES:
 
     tsgen = SYNTH_METHODS[TSGEN](**tsgen_params)
 
+    gens = []
+    for method in SYNTH_METHODS:
+        params_ = {k: v for k, v in augmentation_params.items() if k in SYNTH_METHODS_PARAMS[method]}
+        gens.append(SYNTH_METHODS[method](**params_))
+
     # SPLITS AND MODELS
     train, test = DataUtils.train_test_split(df, horizon)
 
     augmentation_cb = OnlineDataAugmentationCallback(generator=tsgen)
+    augmentation_cb_all = OnlineDACallbackRandGen(generators=gens)
 
     sample_pars = SYNTH_METHODS_PARAM_VALUES[TSGEN]
     if 'seas_period_multiplier' in sample_pars:
         sample_pars['seas_period'] = [int(freq_int * x) for x in sample_pars['seas_period_multiplier']]
         sample_pars.pop('seas_period_multiplier')
+
+    if TSGEN == 'TSMixup':
+        sample_pars['min_len'] = [min_len]
+        sample_pars['max_len'] = [max_len]
 
     sample_params_comb = get_all_combinations(sample_pars)
 
@@ -90,7 +100,11 @@ for data_name, group in REPS_BY_SERIES:
                             alias='OnlineFixed'),
               MODELS[MODEL](**model_conf,
                             callbacks=[augmentation_cb3],
-                            alias='Online')]
+                            alias='Online'),
+              MODELS[MODEL](**model_conf,
+                            callbacks=[augmentation_cb_all],
+                            alias='OnlineRandGen')
+              ]
 
     models_da = [MODELS[MODEL](**model_conf_2xbatch, alias=f'Offline1')]
     models_da_max = [MODELS[MODEL](**model_conf_2xbatch, alias=f'OfflineMax')]
@@ -156,7 +170,7 @@ for data_name, group in REPS_BY_SERIES:
     test = test.merge(fcst_ext.reset_index(), on=['unique_id', 'ds'], how="left")
     test = test.merge(fcst_extrng.reset_index(), on=['unique_id', 'ds'], how="left")
     test = test.merge(sf_fcst.reset_index(), on=['unique_id', 'ds'], how="left")
-    evaluation_df = evaluate(test, [partial(mase, seasonality=freq_int)], train_df=train)
+    evaluation_df = evaluate(test, [partial(mase, seasonality=freq_int), smape], train_df=train)
 
     evaluation_df.to_csv(fp)
 
