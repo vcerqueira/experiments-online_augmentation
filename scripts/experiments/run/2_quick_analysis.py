@@ -12,7 +12,6 @@ results_list = []
 for file in files:
     # if file == 'Gluonts,nn5_weekly,NHITS,SeasonalMBB.csv':
     #     continue
-
     df_ = pd.read_csv(f'{RESULTS_DIR}/{file}')
     df_['dataset'] = file
 
@@ -34,8 +33,7 @@ eval_df = res_metric.drop(columns=['metric', 'unique_id', 'Unnamed: 0'])
 print(eval_df.groupby('dataset').mean().T.mean(axis=1))
 print(eval_df.groupby('dataset').median().T.mean(axis=1))
 print(eval_df.groupby('dataset').median().T.median(axis=1))
-print(eval_df.groupby('dataset').mean().T.rank().T.mean())
 print(eval_df.groupby('dataset').median().T.rank().T.mean())
-print(eval_df.groupby('dataset').apply(lambda x: x[x > x.quantile(.9)].mean().T).mean())
+print(eval_df.groupby('dataset').mean().T.rank().T.mean())
 
 eval_df.groupby('dataset').mean().reset_index(drop=True)

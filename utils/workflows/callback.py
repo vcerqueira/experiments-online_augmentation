@@ -32,6 +32,29 @@ class Counter(pl.Callback):
         return self.state.copy()
 
 
+class TestCallback(pl.Callback):
+
+    def __init__(self):
+        super().__init__()
+
+        self.state = {'batches': 0}
+
+    def on_train_batch_start(self, trainer, pl_module, batch, batch_idx):
+        """
+        Applying data augmentation after getting a batch of time series for training
+        """
+        self.state['batches'] += 1
+
+        temporal = batch['temporal']
+        # temporal, _ = torch.sort(temporal, dim=0)
+        print("temporal.shape")
+        print(temporal.shape)
+
+        batch['temporal'] = temporal
+
+        return batch
+
+
 class OnlineDACallback(pl.Callback):
 
     def __init__(self, generator, max_steps: int):

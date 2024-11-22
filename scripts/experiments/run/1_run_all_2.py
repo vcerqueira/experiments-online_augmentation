@@ -106,9 +106,9 @@ for data_name, group in REPS_BY_SERIES:
               #               alias='OnlineRandGen')
               ]
 
-    models_da = [MODELS[MODEL](**model_conf_2xbatch, alias=f'Offline1')]
+    # models_da = [MODELS[MODEL](**model_conf_2xbatch, alias=f'Offline1')]
     models_da_max = [MODELS[MODEL](**model_conf_2xbatch, alias=f'OfflineMax')]
-    models_da_rng = [MODELS[MODEL](**model_conf_2xbatch, alias=f'OfflineRNG')]
+    # models_da_rng = [MODELS[MODEL](**model_conf_2xbatch, alias=f'OfflineRNG')]
 
     # using original train
 
@@ -123,15 +123,6 @@ for data_name, group in REPS_BY_SERIES:
     sf.fit(train)
     sf_fcst = sf.predict(h=horizon)
 
-    # using augmented train
-    apriori_tsgen = SYNTH_METHODS[TSGEN](**tsgen_params)
-    train_synth = pd.concat([apriori_tsgen.transform(train) for i in range(n_reps)]).reset_index(drop=True)
-    # train_synth = pd.concat([apriori_tsgen.transform(train) for i in range(1)]).reset_index(drop=True)
-    train_ext = pd.concat([train, train_synth]).reset_index(drop=True)
-    nf_da = NeuralForecast(models=models_da, freq=freq_str)
-    nf_da.fit(df=train_ext, val_size=horizon)
-    fcst_ext = nf_da.predict()
-
     n_reps_from_ref = pd.read_csv('assets/n_epochs/n_epochs.csv').values[0][0]
 
     # using max augmented train
@@ -142,34 +133,12 @@ for data_name, group in REPS_BY_SERIES:
     train_synth_max = pd.concat([apriori_tsgen.transform(train) for i in range(n_series_by_uid)]).reset_index(drop=True)
     train_ext_max = pd.concat([train, train_synth_max]).reset_index(drop=True)
 
-    train_synth_rng_l = []
-    for i in range(n_series_by_uid):
-        pars_i = np.random.choice(sample_params_comb)
-
-        tsgen_i = SYNTH_METHODS[TSGEN](**pars_i)
-
-        train_synth_rng_l.append(tsgen_i.transform(train))
-
-    train_synth_rng = pd.concat(train_synth_rng_l)
-
-    train_ext_rng = pd.concat([train, train_synth_rng]).reset_index(drop=True)
-
     nf_da_max = NeuralForecast(models=models_da_max, freq=freq_str)
     nf_da_max.fit(df=train_ext_max, val_size=horizon)
     fcst_extmax = nf_da_max.predict(df=train)
 
-    ##
-
-    nf_da_rng = NeuralForecast(models=models_da_rng, freq=freq_str)
-    nf_da_rng.fit(df=train_ext_rng, val_size=horizon)
-    fcst_extrng = nf_da_rng.predict(df=train)
-
-    # test set and evaluate
-
     test = test.merge(fcst.reset_index(), on=['unique_id', 'ds'], how="left")
     test = test.merge(fcst_extmax.reset_index(), on=['unique_id', 'ds'], how="left")
-    test = test.merge(fcst_ext.reset_index(), on=['unique_id', 'ds'], how="left")
-    test = test.merge(fcst_extrng.reset_index(), on=['unique_id', 'ds'], how="left")
     test = test.merge(sf_fcst.reset_index(), on=['unique_id', 'ds'], how="left")
     evaluation_df = evaluate(test, [partial(mase, seasonality=freq_int), smape], train_df=train)
 
