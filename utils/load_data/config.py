@@ -19,3 +19,12 @@ DATA_GROUPS = {
     'Misc': ['NN3', 'AusDemandWeekly'],
     'Gluonts': ['m1_monthly', 'm1_quarterly', 'nn5_weekly'],
 }
+
+DATA_GROUPS_ = [
+    ('Gluonts', 'm1_monthly'),
+    ('Gluonts', 'm1_quarterly'),
+    ('M3', 'Monthly'),
+    ('M3', 'Quarterly'),
+    ('Tourism', 'Monthly'),
+    ('Tourism', 'Quarterly'),
+]

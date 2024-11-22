@@ -33,6 +33,7 @@ eval_df = res_metric.drop(columns=['metric', 'unique_id', 'Unnamed: 0'])
 print(eval_df.groupby('dataset').mean().T.mean(axis=1))
 print(eval_df.groupby('dataset').median().T.mean(axis=1))
 print(eval_df.groupby('dataset').median().T.median(axis=1))
+print(eval_df.groupby('dataset').apply(lambda x: x.rank(axis=1).mean()).mean())
 print(eval_df.groupby('dataset').median().T.rank().T.mean())
 print(eval_df.groupby('dataset').mean().T.rank().T.mean())
 
