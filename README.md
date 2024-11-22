@@ -1,4 +1,6 @@
 # experiments-online_augmentation
 
-use original to optimize max steps
-it overfits quite easily
+refactor and run all
+run other models
+include more offline variants
+
