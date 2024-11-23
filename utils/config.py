@@ -9,47 +9,53 @@ from metaforecast.synth import (SeasonalMBB,
 
 MODELS = {
     'NHITS': NHITS,
-    'MLP': MLP
+    'MLP': MLP,
+    'GRU': GRU,
+    'TFT': TFT,
 }
+
+REPS_BY_SERIES = 10
 
 MODEL = 'NHITS'
 # TSGEN = 'SeasonalMBB'
-TSGEN = 'Jittering'
+TSGEN = 'MagnitudeWarping'
 # TSGEN = 'TSMixup'
-
-MAX_STEPS = {
-    ('Gluonts', 'm1_quarterly'): 1000,
-    ('Gluonts', 'm1_monthly'): 1000,
-    ('M3', 'Monthly'): 1000,
-    ('M3', 'Quarterly'): 1000,
-    ('Tourism', 'Monthly'): 1000,
-    ('Tourism', 'Quarterly'): 1000,
-    # ('Misc', 'NN3'): 500,
-    # ('Misc', 'AusDemandWeekly'): 500,
-    # ('Gluonts', 'electricity_weekly'): 500,
-    # ('Gluonts', 'nn5_weekly'): 500,
-}
 
 MODEL_CONFIG = {
     'NHITS': {
         'start_padding_enabled': False,
         'accelerator': 'mps',
-        # 'windows_batch_size': 512,
-        'scaler_type': 'standard',
         # 'accelerator': 'cpu',
-        # 'max_steps': 500,
+        'scaler_type': 'standard',
+        'max_steps': 1000,
+        'batch_size': 32,
         # 'val_check_steps': 25,
         # 'enable_checkpointing': True,
         # 'early_stop_patience_steps': 2,
     },
     'MLP': {
-        'start_padding_enabled': True,
+        'start_padding_enabled': False,
         'accelerator': 'mps',
         # 'accelerator': 'cpu',
-        # 'max_steps': 500,
-        'val_check_steps': 50,
-        'enable_checkpointing': True,
-        'early_stop_patience_steps': 1,
+        'scaler_type': 'standard',
+        'batch_size': 32,
+        'max_steps': 1000,
+    },
+    'TFT': {
+        'start_padding_enabled': False,
+        'accelerator': 'mps',
+        # 'accelerator': 'cpu',
+        'scaler_type': 'standard',
+        'batch_size': 32,
+        'max_steps': 1000,
+    },
+    'GRU': {
+        'start_padding_enabled': False,
+        'accelerator': 'mps',
+        # 'accelerator': 'cpu',
+        'scaler_type': 'standard',
+        'batch_size': 32,
+        'max_steps': 1000,
     },
 }
 
@@ -63,7 +69,7 @@ SYNTH_METHODS = {
     'DBA': DBA,
 }
 
-SYNTH_METHODS_PARAMS = {
+SYNTH_METHODS_ARGS = {
     'SeasonalMBB': ['seas_period'],
     'Jittering': [],
     'Scaling': [],
@@ -73,33 +79,7 @@ SYNTH_METHODS_PARAMS = {
     'TSMixup': ['max_n_uids', 'max_len', 'min_len']
 }
 
-REPS_BY_SERIES = {
-    # ('Gluonts', 'nn5_weekly'): 10,
-    # ('Gluonts', 'electricity_weekly'): 10,
-    ('Gluonts', 'm1_monthly'): 10,
-    ('Gluonts', 'm1_quarterly'): 10,
-    # ('Misc', 'NN3'): 10,
-    # ('Misc', 'AusDemandWeekly'): 200,
-    ('M3', 'Monthly'): 10,
-    ('M3', 'Quarterly'): 10,
-    ('Tourism', 'Monthly'): 10,
-    ('Tourism', 'Quarterly'): 10,
-}
-
-BATCH_SIZE = {
-    ('M3', 'Monthly'): 32,
-    ('M3', 'Quarterly'): 32,
-    ('Tourism', 'Monthly'): 32,
-    ('Tourism', 'Quarterly'): 32,
-    ('Gluonts', 'm1_monthly'): 32,
-    ('Gluonts', 'm1_quarterly'): 32,
-    # ('Gluonts', 'nn5_weekly'): 16,
-    # ('Gluonts', 'electricity_weekly'): 32,
-    # ('Misc', 'NN3'): 16,
-    # ('Misc', 'AusDemandWeekly'): 2,
-}
-
-SYNTH_METHODS_PARAM_VALUES = {
+SYNTH_METHODS_GRID_VALUES = {
     'SeasonalMBB': {'log': [True, False], 'seas_period_multiplier': [.5, 1, 2]},
     'Jittering': {'sigma': [0.03, 0.05, 0.1, 0.15, 0.2, 0.3]},
     'Scaling': {'sigma': [0.03, 0.05, 0.1, 0.15, 0.2, 0.3]},

@@ -1,5 +1,6 @@
-import os.path
+import os
 from functools import partial
+
 import numpy as np
 import pandas as pd
 from neuralforecast import NeuralForecast
@@ -7,34 +8,33 @@ from utilsforecast.losses import mase, smape
 from utilsforecast.evaluation import evaluate
 from statsforecast.models import SeasonalNaive
 from statsforecast import StatsForecast
-
 from metaforecast.utils.data import DataUtils
-from metaforecast.synth.callbacks import OnlineDataAugmentationCallback
-from utils.workflows.callback import OnlineDACallbackRandPars, OnlineDACallbackRandGen
-from utils.workflows.params import get_all_combinations
+from metaforecast.synth.callbacks import OnlineDataAugmentation
+
+from utils.param_configs import get_all_combinations
 
 from utils.load_data.config import DATASETS
 from utils.config import (MODELS,
                           MODEL_CONFIG,
                           SYNTH_METHODS,
-                          SYNTH_METHODS_PARAMS, SYNTH_METHODS_PARAM_VALUES,
+                          SYNTH_METHODS_ARGS,
+                          SYNTH_METHODS_GRID_VALUES,
                           REPS_BY_SERIES,
-                          BATCH_SIZE, MODEL, TSGEN, MAX_STEPS)
+                          MODEL,
+                          TSGEN)
+from utils.load_data.config import DATA_GROUPS
 
 # LOADING DATA AND SETUP
-for data_name, group in REPS_BY_SERIES:
+for data_name, group in DATA_GROUPS:
 
-    fp = f'assets/results/{data_name},{group},{MODEL},{TSGEN}.csv'
+    fp = f'assets/results/{data_name}-{group},{MODEL},{TSGEN}.csv'
 
     if os.path.exists(fp):
         continue
 
-    n_reps = REPS_BY_SERIES[(data_name, group)]
     data_loader = DATASETS[data_name]
     min_samples = data_loader.min_samples[group]
     df, horizon, n_lags, freq_str, freq_int = data_loader.load_everything(group, min_n_instances=min_samples)
-    batch_size = BATCH_SIZE[data_name, group]
-    max_steps = MAX_STEPS[data_name, group]
 
     print(df['unique_id'].value_counts())
     print(df.shape)
@@ -58,15 +58,29 @@ for data_name, group in REPS_BY_SERIES:
 
     model_params = MODEL_CONFIG.get(MODEL)
 
-    model_conf = {**input_data, **model_params,
-                  'batch_size': batch_size, 'max_steps': max_steps}
+    model_conf = {**input_data, **model_params}
     model_conf_2xbatch = {**input_data, **model_params,
-                          'batch_size': batch_size * 2,
-                          'max_steps': max_steps}
+                          'batch_size': model_params['batch_size'] * 2}
 
-    tsgen_params = {k: v for k, v in augmentation_params.items() if k in SYNTH_METHODS_PARAMS[TSGEN]}
+    # online augmentation callback setup
 
-    tsgen = SYNTH_METHODS[TSGEN](**tsgen_params)
+    ## default
+    tsgen_params = {k: v for k, v in augmentation_params.items() if k in SYNTH_METHODS_ARGS[TSGEN]}
+
+    generator_default = SYNTH_METHODS[TSGEN](**tsgen_params)
+
+    ## ensemble
+    sample_pars = SYNTH_METHODS_GRID_VALUES[TSGEN]
+    if 'seas_period_multiplier' in sample_pars:
+        sample_pars['seas_period'] = [int(freq_int * x) for x in sample_pars['seas_period_multiplier']]
+        sample_pars.pop('seas_period_multiplier')
+
+    if TSGEN == 'TSMixup':
+        sample_pars['min_len'] = [min_len]
+        sample_pars['max_len'] = [max_len]
+
+    sample_params_comb = get_all_combinations(sample_pars)
+
 
     gens = []
     for method in SYNTH_METHODS:
@@ -77,7 +91,6 @@ for data_name, group in REPS_BY_SERIES:
     train, test = DataUtils.train_test_split(df, horizon)
 
     augmentation_cb = OnlineDataAugmentationCallback(generator=tsgen)
-    augmentation_cb_all = OnlineDACallbackRandGen(generators=gens)
 
     sample_pars = SYNTH_METHODS_PARAM_VALUES[TSGEN]
     if 'seas_period_multiplier' in sample_pars:
@@ -174,8 +187,3 @@ for data_name, group in REPS_BY_SERIES:
     evaluation_df = evaluate(test, [partial(mase, seasonality=freq_int), smape], train_df=train)
 
     evaluation_df.to_csv(fp)
-
-    eval_df = evaluation_df.drop(columns=['metric', 'unique_id'])
-
-    print(eval_df.mean())
-    print(eval_df.apply(lambda x: x[x > x.quantile(.95)].mean()))

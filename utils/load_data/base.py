@@ -111,14 +111,3 @@ class LoadDataset:
         test_df = pd.concat(test_l).reset_index(drop=True)
 
         return train_df, test_df
-
-    @staticmethod
-    def temporal_tr_ts_split(df: pd.DataFrame, last_train_ts):
-        test_condition = df['ds'].dt.year > 2020
-        test_idx = np.where(test_condition)
-        train_idx = np.where(~test_condition)
-
-        test = df.iloc[test_idx]
-        train = df.iloc[train_idx]
-
-        return train, test
