@@ -2,7 +2,6 @@ import os
 from functools import partial
 
 import numpy as np
-import pandas as pd
 from neuralforecast import NeuralForecast
 from utilsforecast.losses import mase, smape
 from utilsforecast.evaluation import evaluate
@@ -11,18 +10,13 @@ from statsforecast import StatsForecast
 from metaforecast.utils.data import DataUtils
 from metaforecast.synth.callbacks import OnlineDataAugmentation
 
-from utils.param_configs import get_all_combinations
-
 from utils.load_data.config import DATASETS
-from utils.config import (MODELS,
-                          MODEL_CONFIG,
-                          SYNTH_METHODS,
-                          SYNTH_METHODS_ARGS,
-                          SYNTH_METHODS_GRID_VALUES,
-                          REPS_BY_SERIES,
-                          MODEL,
-                          TSGEN)
+from utils.config import MODELS, MODEL_CONFIG, MODEL, TSGEN
 from utils.load_data.config import DATA_GROUPS
+from utils.generators import (get_fixed_online_generator,
+                              get_ensemble_online_generator,
+                              get_offline_augmented_data,
+                              get_offline_augmented_data_rng)
 
 # LOADING DATA AND SETUP
 for data_name, group in DATA_GROUPS:
@@ -38,6 +32,9 @@ for data_name, group in DATA_GROUPS:
 
     print(df['unique_id'].value_counts())
     print(df.shape)
+
+    # SPLITS AND MODELS
+    train, test = DataUtils.train_test_split(df, horizon)
 
     # PREPARING CONFIGS
     n_uids = df['unique_id'].nunique()
@@ -63,126 +60,65 @@ for data_name, group in DATA_GROUPS:
                           'batch_size': model_params['batch_size'] * 2}
 
     # online augmentation callback setup
+    tsgen_default = get_fixed_online_generator(TSGEN, augmentation_params)
+    tsgen_ensemble = get_ensemble_online_generator(TSGEN, freq_int, min_len, max_len)
 
-    ## default
-    tsgen_params = {k: v for k, v in augmentation_params.items() if k in SYNTH_METHODS_ARGS[TSGEN]}
+    oda_def_cb = OnlineDataAugmentation(generator=tsgen_default)
+    oda_ens_cb = OnlineDataAugmentation(generator=tsgen_default)
 
-    generator_default = SYNTH_METHODS[TSGEN](**tsgen_params)
+    models = [MODELS[MODEL](**model_conf_2xbatch, alias='Original'),
+              MODELS[MODEL](**model_conf, callbacks=[oda_def_cb], alias='Online(D)'),
+              MODELS[MODEL](**model_conf, callbacks=[oda_ens_cb], alias='Online(E)')]
 
-    ## ensemble
-    sample_pars = SYNTH_METHODS_GRID_VALUES[TSGEN]
-    if 'seas_period_multiplier' in sample_pars:
-        sample_pars['seas_period'] = [int(freq_int * x) for x in sample_pars['seas_period_multiplier']]
-        sample_pars.pop('seas_period_multiplier')
-
-    if TSGEN == 'TSMixup':
-        sample_pars['min_len'] = [min_len]
-        sample_pars['max_len'] = [max_len]
-
-    sample_params_comb = get_all_combinations(sample_pars)
-
-
-    gens = []
-    for method in SYNTH_METHODS:
-        params_ = {k: v for k, v in augmentation_params.items() if k in SYNTH_METHODS_PARAMS[method]}
-        gens.append(SYNTH_METHODS[method](**params_))
-
-    # SPLITS AND MODELS
-    train, test = DataUtils.train_test_split(df, horizon)
-
-    augmentation_cb = OnlineDataAugmentationCallback(generator=tsgen)
-
-    sample_pars = SYNTH_METHODS_PARAM_VALUES[TSGEN]
-    if 'seas_period_multiplier' in sample_pars:
-        sample_pars['seas_period'] = [int(freq_int * x) for x in sample_pars['seas_period_multiplier']]
-        sample_pars.pop('seas_period_multiplier')
-
-    if TSGEN == 'TSMixup':
-        sample_pars['min_len'] = [min_len]
-        sample_pars['max_len'] = [max_len]
-
-    sample_params_comb = get_all_combinations(sample_pars)
-
-    augmentation_cb3 = OnlineDACallbackRandPars(generator=SYNTH_METHODS[TSGEN],
-                                                sample_params=sample_params_comb)
-
-    models = [MODELS[MODEL](**model_conf_2xbatch,
-                            alias='Original'),
-              MODELS[MODEL](**model_conf,
-                            callbacks=[augmentation_cb],
-                            alias='OnlineFixed'),
-              MODELS[MODEL](**model_conf,
-                            callbacks=[augmentation_cb3],
-                            alias='Online'),
-              # MODELS[MODEL](**model_conf,
-              #               callbacks=[augmentation_cb_all],
-              #               alias='OnlineRandGen')
-              ]
-
-    models_da = [MODELS[MODEL](**model_conf_2xbatch, alias=f'Offline1')]
-    models_da_max = [MODELS[MODEL](**model_conf_2xbatch, alias=f'OfflineMax')]
-    models_da_rng = [MODELS[MODEL](**model_conf_2xbatch, alias=f'OfflineRNG')]
+    models_da_1 = [MODELS[MODEL](**model_conf_2xbatch, alias=f'Offline(1))')]
+    models_da_10 = [MODELS[MODEL](**model_conf_2xbatch, alias=f'Offline(10))')]
+    models_da_eq = [MODELS[MODEL](**model_conf_2xbatch, alias=f'Offline(=)')]
+    models_da_rng = [MODELS[MODEL](**model_conf_2xbatch, alias=f'Offline(E)')]
 
     # using original train
-
     nf = NeuralForecast(models=models, freq=freq_str)
     nf.fit(df=train, val_size=horizon)
-
     fcst = nf.predict()
 
+    # seasonal naive baseline
     stats_models = [SeasonalNaive(season_length=freq_int)]
     sf = StatsForecast(models=stats_models, freq=freq_str, n_jobs=1)
-
     sf.fit(train)
     sf_fcst = sf.predict(h=horizon)
 
     # using augmented train
-    apriori_tsgen = SYNTH_METHODS[TSGEN](**tsgen_params)
-    train_synth = pd.concat([apriori_tsgen.transform(train) for i in range(n_reps)]).reset_index(drop=True)
-    # train_synth = pd.concat([apriori_tsgen.transform(train) for i in range(1)]).reset_index(drop=True)
-    train_ext = pd.concat([train, train_synth]).reset_index(drop=True)
-    nf_da = NeuralForecast(models=models_da, freq=freq_str)
-    nf_da.fit(df=train_ext, val_size=horizon)
-    fcst_ext = nf_da.predict()
+    # offline data augmentation
+    n_series_by_uid = int((model_conf['max_steps'] * model_conf['batch_size']) / train['unique_id'].nunique())
 
-    n_reps_from_ref = pd.read_csv('assets/n_epochs/n_epochs.csv').values[0][0]
+    train_da_10 = get_offline_augmented_data(train, TSGEN, augmentation_params, 10)
+    train_da_1 = get_offline_augmented_data(train, TSGEN, augmentation_params, 1)
+    train_da_eq = get_offline_augmented_data(train, TSGEN, augmentation_params, n_series_by_uid)
+    train_da_eq_rng = get_offline_augmented_data_rng(train, TSGEN, n_series_by_uid, freq_int, min_len, max_len)
 
-    # using max augmented train
-    apriori_tsgen = SYNTH_METHODS[TSGEN](**tsgen_params)
-    n_series_by_uid = int(n_reps_from_ref * model_conf['batch_size'] / train['unique_id'].nunique())
+    # training and predicting
+    nf_da1 = NeuralForecast(models=models_da_1, freq=freq_str)
+    nf_da1.fit(df=train_da_1, val_size=horizon)
+    fcst_da1 = nf_da1.predict()
 
-    # train_synth_max = apriori_tsgen.transform(train, n_series_by_uid)
-    train_synth_max = pd.concat([apriori_tsgen.transform(train) for i in range(n_series_by_uid)]).reset_index(drop=True)
-    train_ext_max = pd.concat([train, train_synth_max]).reset_index(drop=True)
+    nf_da10 = NeuralForecast(models=models_da_10, freq=freq_str)
+    nf_da10.fit(df=train_da_10, val_size=horizon)
+    fcst_da10 = nf_da10.predict()
 
-    train_synth_rng_l = []
-    for i in range(n_series_by_uid):
-        pars_i = np.random.choice(sample_params_comb)
+    nf_da_eq = NeuralForecast(models=models_da_eq, freq=freq_str)
+    nf_da_eq.fit(df=train_da_eq, val_size=horizon)
+    fcst_da_eq = nf_da_eq.predict()
 
-        tsgen_i = SYNTH_METHODS[TSGEN](**pars_i)
-
-        train_synth_rng_l.append(tsgen_i.transform(train))
-
-    train_synth_rng = pd.concat(train_synth_rng_l)
-
-    train_ext_rng = pd.concat([train, train_synth_rng]).reset_index(drop=True)
-
-    nf_da_max = NeuralForecast(models=models_da_max, freq=freq_str)
-    nf_da_max.fit(df=train_ext_max, val_size=horizon)
-    fcst_extmax = nf_da_max.predict(df=train)
-
-    ##
-
-    nf_da_rng = NeuralForecast(models=models_da_rng, freq=freq_str)
-    nf_da_rng.fit(df=train_ext_rng, val_size=horizon)
-    fcst_extrng = nf_da_rng.predict(df=train)
+    nf_da_eqr = NeuralForecast(models=models_da_rng, freq=freq_str)
+    nf_da_eqr.fit(df=train_da_eq_rng, val_size=horizon)
+    fcst_da_eqr = nf_da_eqr.predict()
 
     # test set and evaluate
 
     test = test.merge(fcst.reset_index(), on=['unique_id', 'ds'], how="left")
-    test = test.merge(fcst_extmax.reset_index(), on=['unique_id', 'ds'], how="left")
-    test = test.merge(fcst_ext.reset_index(), on=['unique_id', 'ds'], how="left")
-    test = test.merge(fcst_extrng.reset_index(), on=['unique_id', 'ds'], how="left")
+    test = test.merge(fcst_da1.reset_index(), on=['unique_id', 'ds'], how="left")
+    test = test.merge(fcst_da10.reset_index(), on=['unique_id', 'ds'], how="left")
+    test = test.merge(fcst_da_eq.reset_index(), on=['unique_id', 'ds'], how="left")
+    test = test.merge(fcst_da_eqr.reset_index(), on=['unique_id', 'ds'], how="left")
     test = test.merge(sf_fcst.reset_index(), on=['unique_id', 'ds'], how="left")
     evaluation_df = evaluate(test, [partial(mase, seasonality=freq_int), smape], train_df=train)
 

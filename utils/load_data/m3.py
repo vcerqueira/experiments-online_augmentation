@@ -12,11 +12,6 @@ class M3Dataset(LoadDataset):
         'Yearly': 4,
     }
 
-    # horizons_map_list = {
-    #     'Quarterly': [1, 2, 4, 6],
-    #     'Monthly': [1, 6, 12, 18],
-    # }
-
     frequency_map = {
         'Quarterly': 4,
         'Monthly': 12,

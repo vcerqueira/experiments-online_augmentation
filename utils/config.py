@@ -7,6 +7,13 @@ from metaforecast.synth import (SeasonalMBB,
                                 DBA,
                                 TSMixup)
 
+REPS_BY_SERIES = 10
+MODEL = 'NHITS'
+# TSGEN = 'SeasonalMBB'
+TSGEN = 'MagnitudeWarping'
+# TSGEN = 'TSMixup'
+
+
 MODELS = {
     'NHITS': NHITS,
     'MLP': MLP,
@@ -14,20 +21,13 @@ MODELS = {
     'TFT': TFT,
 }
 
-REPS_BY_SERIES = 10
-
-MODEL = 'NHITS'
-# TSGEN = 'SeasonalMBB'
-TSGEN = 'MagnitudeWarping'
-# TSGEN = 'TSMixup'
-
 MODEL_CONFIG = {
     'NHITS': {
         'start_padding_enabled': False,
-        'accelerator': 'mps',
-        # 'accelerator': 'cpu',
+        # 'accelerator': 'mps',
+        'accelerator': 'cpu',
         'scaler_type': 'standard',
-        'max_steps': 1000,
+        'max_steps': 3,
         'batch_size': 32,
         # 'val_check_steps': 25,
         # 'enable_checkpointing': True,
