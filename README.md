@@ -54,7 +54,7 @@ If you use this code in your research, please cite:
 ```bibtex
 @article{cerqueira2024fly,
   title={On-the-fly Data Augmentation for Forecasting with Deep Learning},
-  author={Cerqueira, V{\'i}tor and Santos, Miguel and Baghoussi, Yassine and Soares, Carlos},
+  author={Cerqueira, Vitor and Santos, Mois{\'e}s and Baghoussi, Yassine and Soares, Carlos},
   journal={arXiv preprint arXiv:2404.16918},
   year={2024}
 }
