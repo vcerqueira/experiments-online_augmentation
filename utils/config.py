@@ -1,4 +1,4 @@
-from neuralforecast.models import NHITS, MLP, GRU, TFT
+from neuralforecast.models import NHITS, MLP, DLinear
 from metaforecast.synth import (SeasonalMBB,
                                 Jittering,
                                 Scaling,
@@ -14,8 +14,7 @@ TSGEN = 'SeasonalMBB'
 MODELS = {
     'NHITS': NHITS,
     'MLP': MLP,
-    'GRU': GRU,
-    'TFT': TFT,
+    'DLinear': DLinear,
 }
 
 MODEL_CONFIG = {
@@ -38,15 +37,7 @@ MODEL_CONFIG = {
         'batch_size': 32,
         'max_steps': 1000,
     },
-    'TFT': {
-        'start_padding_enabled': False,
-        'accelerator': 'mps',
-        # 'accelerator': 'cpu',
-        'scaler_type': 'standard',
-        'batch_size': 32,
-        'max_steps': 1000,
-    },
-    'GRU': {
+    'DLinear': {
         'accelerator': 'mps',
         # 'accelerator': 'cpu',
         'scaler_type': 'standard',
