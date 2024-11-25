@@ -64,16 +64,25 @@ for data_name, group in DATA_GROUPS:
     tsgen_ensemble = get_ensemble_online_generator(TSGEN, freq_int, min_len, max_len)
 
     oda_def_cb = OnlineDataAugmentation(generator=tsgen_default)
-    oda_ens_cb = OnlineDataAugmentation(generator=tsgen_default)
+    oda_ens_cb = OnlineDataAugmentation(generator=tsgen_ensemble)
 
     models = [MODELS[MODEL](**model_conf_2xbatch, alias='Original'),
-              MODELS[MODEL](**model_conf, callbacks=[oda_def_cb], alias='Online(D)'),
-              MODELS[MODEL](**model_conf, callbacks=[oda_ens_cb], alias='Online(E)')]
+              MODELS[MODEL](**model_conf, callbacks=[oda_def_cb], alias='Online(Fixed)'),
+              MODELS[MODEL](**model_conf, callbacks=[oda_ens_cb], alias='Online(Ens)')]
 
     models_da_1 = [MODELS[MODEL](**model_conf_2xbatch, alias=f'Offline(1))')]
     models_da_10 = [MODELS[MODEL](**model_conf_2xbatch, alias=f'Offline(10))')]
     models_da_eq = [MODELS[MODEL](**model_conf_2xbatch, alias=f'Offline(=)')]
-    models_da_rng = [MODELS[MODEL](**model_conf_2xbatch, alias=f'Offline(E)')]
+    models_da_rng = [MODELS[MODEL](**model_conf_2xbatch, alias=f'Offline(=,Ens)')]
+
+    # using augmented train
+    # offline data augmentation
+    n_series_by_uid = int((model_conf['max_steps'] * model_conf['batch_size']) / train['unique_id'].nunique())
+
+    train_da_10 = get_offline_augmented_data(train, TSGEN, augmentation_params, 10)
+    train_da_1 = get_offline_augmented_data(train, TSGEN, augmentation_params, 1)
+    train_da_eq = get_offline_augmented_data(train, TSGEN, augmentation_params, n_series_by_uid)
+    train_da_eq_rng = get_offline_augmented_data_rng(train, TSGEN, n_series_by_uid, freq_int, min_len, max_len)
 
     # using original train
     nf = NeuralForecast(models=models, freq=freq_str)
@@ -85,15 +94,6 @@ for data_name, group in DATA_GROUPS:
     sf = StatsForecast(models=stats_models, freq=freq_str, n_jobs=1)
     sf.fit(train)
     sf_fcst = sf.predict(h=horizon)
-
-    # using augmented train
-    # offline data augmentation
-    n_series_by_uid = int((model_conf['max_steps'] * model_conf['batch_size']) / train['unique_id'].nunique())
-
-    train_da_10 = get_offline_augmented_data(train, TSGEN, augmentation_params, 10)
-    train_da_1 = get_offline_augmented_data(train, TSGEN, augmentation_params, 1)
-    train_da_eq = get_offline_augmented_data(train, TSGEN, augmentation_params, n_series_by_uid)
-    train_da_eq_rng = get_offline_augmented_data_rng(train, TSGEN, n_series_by_uid, freq_int, min_len, max_len)
 
     # training and predicting
     nf_da1 = NeuralForecast(models=models_da_1, freq=freq_str)

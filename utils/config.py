@@ -8,11 +8,8 @@ from metaforecast.synth import (SeasonalMBB,
                                 TSMixup)
 
 REPS_BY_SERIES = 10
-MODEL = 'NHITS'
-# TSGEN = 'SeasonalMBB'
-TSGEN = 'MagnitudeWarping'
-# TSGEN = 'TSMixup'
-
+MODEL = 'MLP'
+TSGEN = 'SeasonalMBB'
 
 MODELS = {
     'NHITS': NHITS,
@@ -24,10 +21,10 @@ MODELS = {
 MODEL_CONFIG = {
     'NHITS': {
         'start_padding_enabled': False,
-        # 'accelerator': 'mps',
-        'accelerator': 'cpu',
+        'accelerator': 'mps',
+        # 'accelerator': 'cpu',
         'scaler_type': 'standard',
-        'max_steps': 3,
+        'max_steps': 1000,
         'batch_size': 32,
         # 'val_check_steps': 25,
         # 'enable_checkpointing': True,
@@ -50,7 +47,6 @@ MODEL_CONFIG = {
         'max_steps': 1000,
     },
     'GRU': {
-        'start_padding_enabled': False,
         'accelerator': 'mps',
         # 'accelerator': 'cpu',
         'scaler_type': 'standard',
@@ -63,9 +59,9 @@ SYNTH_METHODS = {
     'SeasonalMBB': SeasonalMBB,
     'Jittering': Jittering,
     'Scaling': Scaling,
-    'TSMixup': TSMixup,
     'TimeWarping': TimeWarping,
     'MagnitudeWarping': MagnitudeWarping,
+    'TSMixup': TSMixup,
     'DBA': DBA,
 }
 
