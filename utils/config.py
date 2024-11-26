@@ -9,7 +9,7 @@ from metaforecast.synth import (SeasonalMBB,
 
 REPS_BY_SERIES = 10
 MODEL = 'KAN'
-TSGEN = 'Jittering'
+TSGEN = 'Scaling'
 
 MODELS = {
     'NHITS': NHITS,

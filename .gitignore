@@ -164,12 +164,10 @@ lightning_logs
 
 
 # Custom
-assets/datasets/
 assets/old/
 assets/papers/
 assets/results_rest
 experiments_extra/
-m3/
 metaforecast/
 scripts/experiments/dev/
 
