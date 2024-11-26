@@ -1,0 +1,13 @@
+datasetsforecast==0.0.8
+gluonts==0.15.1
+lightgbm==4.5.0
+mlforecast==0.13.4
+neuralforecast==1.7.5
+numpy==1.26.4
+pandas==2.2.3
+scikit-learn==1.5.2
+scipy==1.14.1
+statsforecast==1.7.5
+statsmodels==0.14.4
+utilsforecast==0.2.8
+metaforecast==0.1.7
