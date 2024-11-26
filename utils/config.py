@@ -1,4 +1,4 @@
-from neuralforecast.models import NHITS, MLP, DLinear
+from neuralforecast.models import NHITS, MLP, KAN
 from metaforecast.synth import (SeasonalMBB,
                                 Jittering,
                                 Scaling,
@@ -8,13 +8,13 @@ from metaforecast.synth import (SeasonalMBB,
                                 TSMixup)
 
 REPS_BY_SERIES = 10
-MODEL = 'MLP'
-TSGEN = 'SeasonalMBB'
+MODEL = 'KAN'
+TSGEN = 'Jittering'
 
 MODELS = {
     'NHITS': NHITS,
     'MLP': MLP,
-    'DLinear': DLinear,
+    'KAN': KAN,
 }
 
 MODEL_CONFIG = {
@@ -25,9 +25,6 @@ MODEL_CONFIG = {
         'scaler_type': 'standard',
         'max_steps': 1000,
         'batch_size': 32,
-        # 'val_check_steps': 25,
-        # 'enable_checkpointing': True,
-        # 'early_stop_patience_steps': 2,
     },
     'MLP': {
         'start_padding_enabled': False,
@@ -37,13 +34,14 @@ MODEL_CONFIG = {
         'batch_size': 32,
         'max_steps': 1000,
     },
-    'DLinear': {
+    'KAN': {
         'accelerator': 'mps',
         # 'accelerator': 'cpu',
         'scaler_type': 'standard',
         'batch_size': 32,
         'max_steps': 1000,
     },
+
 }
 
 SYNTH_METHODS = {
