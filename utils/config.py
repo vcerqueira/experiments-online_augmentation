@@ -11,6 +11,8 @@ REPS_BY_SERIES = 10
 MODEL = 'KAN'
 TSGEN = 'Scaling'
 
+RESULTS_DIR = 'assets/results'
+
 MODELS = {
     'NHITS': NHITS,
     'MLP': MLP,
