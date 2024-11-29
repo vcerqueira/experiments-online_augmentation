@@ -11,3 +11,4 @@ statsforecast==1.7.5
 statsmodels==0.14.4
 utilsforecast==0.2.8
 metaforecast==0.1.7
+plotnine==0.14.3

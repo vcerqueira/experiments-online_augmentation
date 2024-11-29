@@ -1,7 +1,10 @@
 import pandas as pd
 
 
-def to_latex_tab(df, round_to_n):
+def to_latex_tab(df, round_to_n, rotate_cols: bool):
+    if rotate_cols:
+        df.columns = [f'\\rotatebox{{90}}{{{x}}}' for x in df.columns]
+
     annotated_res = []
     for i, r in df.round(round_to_n).iterrows():
         top_2 = r.sort_values().unique()[:2]

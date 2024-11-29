@@ -1,51 +1,48 @@
-import os
-
 import pandas as pd
+import plotnine as p9
 
 from utils.analysis import to_latex_tab
 from utils.results import read_results
+from utils.plots import THEME
 
 pd.set_option('display.max_columns', None)
 
 df = read_results('mase')
-df.iloc[0]
 
 df.groupby('ds').mean(numeric_only=True)
 df.groupby('operation').mean(numeric_only=True)
 
-# method='Jittering'
-# res = res.loc[res['dataset'].str.endswith(f'{method}.csv'),:]
+# overall details on table
+perf_by_all = df.groupby(['ds', 'model', 'operation']).mean(numeric_only=True)
+perf_by_mod_ds = df.groupby(['model', 'operation']).mean(numeric_only=True)
+avg_score = perf_by_mod_ds.mean().values
+avg_rank = perf_by_all.rank(axis=1).mean().round(2).values
 
-# eval_df['ds'] = eval_df['dataset'].str.split(',').apply(lambda x: '_'.join(x[:2]))
-# eval_df = eval_df.drop(columns='dataset')
+perf_by_mod_ds.loc[('All', 'Average'), :] = avg_score
+perf_by_mod_ds.loc[('All', 'Avg. Rank'), :] = avg_rank
 
-# eval_df.groupby(['ds','tsg']).mean()
-# eval_df.groupby(['ds']).median(numeric_only=True).mean()
-# eval_df.groupby(['tsg']).median(numeric_only=True).mean()
+tex_tab = to_latex_tab(perf_by_mod_ds, 4, rotate_cols=True)
+print(tex_tab)
 
-print(eval_df.groupby('dataset').mean().T.mean(axis=1))
-print(eval_df.groupby('dataset').median().T.mean(axis=1))
-print(eval_df.groupby('dataset').mean().T.median(axis=1))
-print(eval_df.groupby('dataset').apply(lambda x: x.rank(axis=1).mean()).mean())
-print(eval_df.groupby('dataset').median().T.rank().T.mean())
-print(eval_df.groupby('dataset').mean().T.rank().T.mean())
-print(eval_df.groupby('dataset').apply(lambda x: x[x > x.quantile(.9)].mean()).mean())
+# grouped bar plot
+# x=operation, y= average score, group=model
+scores = df.groupby(['model', 'operation']).mean(numeric_only=True)['Online(Fixed)']
+scores_df = scores.reset_index()
+scores_df.columns = ['Model', 'Method', 'MASE']
 
-eval_df.groupby('dataset').mean().reset_index(drop=True)
+plot = \
+    p9.ggplot(data=scores_df,
+              mapping=p9.aes(x='Model',
+                             y='MASE',
+                             fill='Method')) + \
+    p9.geom_bar(position='dodge',
+                stat='identity',
+                width=0.9) + \
+    THEME + \
+    p9.theme(axis_title_y=p9.element_text(size=12),
+             axis_title_x=p9.element_blank(),
+             axis_text=p9.element_text(size=12))
 
-eval_df['tsg'] = eval_df['dataset'].str.split(',').apply(lambda x: x[-1])
-eval_df.groupby(['tsg', 'dataset']).mean().reset_index(level='dataset', drop=True)
+plot.save('mase_by_model_op.pdf', height=5, width=12)
 
-resdf = eval_df.groupby(['tsg']).mean(numeric_only=True)
-
-text_tab = to_latex_tab(resdf, 4)
-
-print(text_tab)
 #
-# print(eval_df.drop(columns='dataset').groupby('tsg').mean().T.mean(axis=1))
-# print(eval_df.drop(columns='dataset').groupby('tsg').median().T.mean(axis=1))
-# print(eval_df.drop(columns='dataset').groupby('tsg').mean().T.median(axis=1))
-# print(eval_df.drop(columns='dataset').groupby('tsg').apply(lambda x: x.rank(axis=1).mean()).mean())
-# print(eval_df.drop(columns='dataset').groupby('tsg').median().T.rank().T.mean())
-# print(eval_df.drop(columns='dataset').groupby('tsg').mean().T.rank().T.mean())
-# print(eval_df.drop(columns='dataset').groupby('tsg').apply(lambda x: x[x > x.quantile(.9)].mean()).mean())
