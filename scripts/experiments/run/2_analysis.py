@@ -46,3 +46,39 @@ plot = \
 plot.save('mase_by_model_op.pdf', height=5, width=12)
 
 #
+
+ds_perf = df.groupby(['ds', 'operation']).mean(numeric_only=True)['Online(Fixed)'].reset_index()
+ds_perf.columns = ['Dataset', 'Method', 'MASE']
+
+plot = \
+    p9.ggplot(data=ds_perf,
+              mapping=p9.aes(x='Method',
+                             y='MASE',
+                             fill='Method')) + \
+    p9.facet_wrap('~Dataset', nrow=2) + \
+    p9.geom_bar(position='dodge',
+                stat='identity',
+                width=0.9) + \
+    THEME + \
+    p9.theme(axis_title_y=p9.element_text(size=12),
+             axis_title_x=p9.element_blank(),
+             axis_text=p9.element_text(size=12),
+             axis_text_x=p9.element_text(angle=60))
+
+plot.save('mase_by_model_ds.pdf', height=5, width=12)
+
+# effectiveness
+
+df_eff = df.groupby(['ds', 'operation', 'model']).mean(numeric_only=True)
+
+effectiveness = \
+    pd.concat({c: df_eff[c] < df_eff['Original']
+               for c in df_eff.columns if c not in ['Original', 'SeasonalNaive']}, axis=1)
+
+# faz sentido?
+# MCM.compare(
+#     output_dir='.',
+#     df_results=df.groupby(['ds', 'operation', 'model']).mean(numeric_only=True),
+#     pdf_savename="heatmap",
+#     png_savename="heatmap",
+# )
