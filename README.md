@@ -47,6 +47,10 @@ The experiments use the following augmentation techniques:
 - Magnitude-warping
 - Scaling
 
+Here's an overview of the forecast accuracy of these using 3 different deep nets:
+
+![Forecast accuracy](assets/comparision_overview.png)
+
 ## Citation
 
 If you use this code in your research, please cite:
