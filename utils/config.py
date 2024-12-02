@@ -37,7 +37,7 @@ MODEL_CONFIG = {
         'max_steps': 1000,
     },
     'KAN': {
-        'accelerator': 'mps',
+        'accelerator': 'gpu',
         # 'accelerator': 'cpu',
         'scaler_type': 'standard',
         'batch_size': 32,
