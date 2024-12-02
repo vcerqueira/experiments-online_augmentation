@@ -1,11 +1,7 @@
 import pandas as pd
 import plotnine as p9
 
-from utils.analysis import to_latex_tab
-from utils.results import read_results
-from utils.plots import THEME
-
-pd.set_option('display.max_columns', None)
+from utils.analysis import to_latex_tab, read_results, THEME
 
 df = read_results('mase')
 
@@ -19,11 +15,9 @@ COLUMN_MAP = {
     'Offline(1))': 'Offline(1)',
     'Offline(10))': 'Offline(10)',
     'Offline(=,Ens)': 'Offline(=,E)',
-    # 'Original': 'No Augmentation',
     'SeasonalNaive': 'Naive',
 }
 
-# df['operation'].unique()
 OPERATION_MAP = {
     'MagnitudeWarping': 'M-Warp',
     'TimeWarping': 'T-Warp',
@@ -43,8 +37,8 @@ COLORS = [
 df = df.rename(columns=COLUMN_MAP)
 df['operation'] = df['operation'].replace(OPERATION_MAP)
 
-df.groupby('ds').mean(numeric_only=True)
-df.groupby('operation').mean(numeric_only=True)
+# df.groupby('ds').mean(numeric_only=True)
+# df.groupby('operation').mean(numeric_only=True)
 
 # overall details on table
 perf_by_all = df.groupby(['ds', 'model', 'operation']).mean(numeric_only=True)
@@ -129,11 +123,3 @@ plot = \
     p9.labs(x='')
 
 plot.save('effectiveness.pdf', width=10, height=4)
-
-# faz sentido?
-# MCM.compare(
-#     output_dir='.',
-#     df_results=df.groupby(['ds', 'operation', 'model']).mean(numeric_only=True),
-#     pdf_savename="heatmap",
-#     png_savename="heatmap",
-# )
