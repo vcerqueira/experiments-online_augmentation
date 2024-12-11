@@ -34,6 +34,17 @@ COLORS = [
     '#9b2226'  # Deep red
 ]
 
+APPROACH_COLORES = [
+    '#2c3e50',  # Dark slate blue
+    '#34558b',  # Royal blue
+    '#4b7be5',  # Bright blue
+    '#6db1bf',  # Light teal
+    '#bf9b7a',  # Warm tan
+    '#d17f5e',  # Warm coral
+    '#c44536',  # Burnt orange red
+    '#8b1e3f'   # Deep burgundy
+]
+
 df = df.rename(columns=COLUMN_MAP)
 df['operation'] = df['operation'].replace(OPERATION_MAP)
 
@@ -96,6 +107,30 @@ plot = \
     p9.scale_fill_manual(values=COLORS)
 
 plot.save('mase_by_model_ds.pdf', height=7, width=12)
+
+#
+
+ds_perf = df.groupby(['ds']).mean(numeric_only=True).drop(columns='Offline(=,E)').reset_index().melt('ds')
+ds_perf.columns = ['Dataset', 'Approach', 'MASE']
+
+plot = \
+    p9.ggplot(data=ds_perf,
+              mapping=p9.aes(x='Approach',
+                             y='MASE',
+                             fill='Approach')) + \
+    p9.facet_wrap('~Dataset', nrow=2) + \
+    p9.geom_bar(position='dodge',
+                stat='identity',
+                width=0.9) + \
+    THEME + \
+    p9.theme(axis_title_y=p9.element_text(size=12),
+             axis_title_x=p9.element_blank(),
+             axis_text=p9.element_text(size=12),
+             axis_text_x=p9.element_text(angle=60)) + \
+    p9.scale_fill_manual(values=APPROACH_COLORES)
+
+plot.save('mase_by_approach_ds.pdf', height=7, width=12)
+
 
 # effectiveness
 
