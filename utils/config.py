@@ -72,9 +72,6 @@ SYNTH_METHODS_GRID_VALUES = {
     'Scaling': {'sigma': [0.03, 0.05, 0.1, 0.15, 0.2, 0.3]},
     'MagnitudeWarping': {'sigma': [0.05, 0.1, 0.15], 'knot': [3, 4, 5]},
     'TimeWarping': {'sigma': [0.05, 0.1, 0.15], 'knot': [3, 4, 5]},
-    'DBA': {'max_n_uids': [7, 10, 15],
-            'dirichlet_alpha': [1.0, 1.5, 2.0],
-            'max_iter': [10]},
-    'TSMixup': {'max_n_uids': [5, 7, 10],
-                'dirichlet_alpha': [1.0, 1.5, 2.0, 3.0]}
+    'DBA': {'max_n_uids': [7, 10, 15], 'dirichlet_alpha': [1.0, 1.5, 2.0]},
+    'TSMixup': {'max_n_uids': [5, 7, 10], 'dirichlet_alpha': [1.0, 1.5, 2.0]}
 }
