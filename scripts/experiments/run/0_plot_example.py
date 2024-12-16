@@ -48,6 +48,15 @@ for tsgen in SYNTH_METHODS:
 
 aug_df = pd.concat(uid_list)
 
+COLORS = [
+    '#34558b',  # Royal blue
+    '#4b7be5',  # Bright blue
+    '#6db1bf',  # Light teal
+    '#bf9b7a',  # Warm tan
+    '#d17f5e',  # Warm coral
+    '#c44536',  # Burnt orange red
+]
+
 plot = \
     p9.ggplot(aug_df) + \
     p9.aes(x='ds',
@@ -67,6 +76,7 @@ plot = \
              axis_title=p9.element_text(size=12),
              legend_title=p9.element_blank()) + \
     p9.scale_x_datetime(date_breaks='2 years') + \
-    p9.labs(x='', y='value', title=f'M1 Monthly, id={uid}')
+    p9.labs(x='', y='value', title=f'M1 Monthly, id={uid}') + \
+    p9.scale_color_manual(values=COLORS)
 
-plot.save('example_aug.pdf', width=10, height=5)
+plot.save('example_aug.pdf', width=10, height=4)
